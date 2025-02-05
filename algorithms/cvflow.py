@@ -32,7 +32,7 @@ def calculate_normalized_flow(prev_frame: np.ndarray, curr_frame: np.ndarray, re
     
     return normalized_magnitude
 
-def preprocess_video(video_path: Path, resize_ratio: int = 4) -> List[float]:
+def preprocess_video(video_path: Path, resize_ratio: int = 4, disable_tqdm: bool = False) -> List[float]:
     # Open video file
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -43,7 +43,7 @@ def preprocess_video(video_path: Path, resize_ratio: int = 4) -> List[float]:
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     prev_frame = None
     flow = []
-    for frame_idx in tqdm(range(total_frames), desc="Calculating flow"):
+    for frame_idx in tqdm(range(total_frames), desc="Calculating flow", disable=disable_tqdm):
         ret, frame = cap.read()
         if not ret:
             break

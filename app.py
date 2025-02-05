@@ -18,6 +18,8 @@ import hashlib
 import sys
 import os
 import av
+import numpy as np
+
 import json
 import toml
 import struct
@@ -31,7 +33,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_CONFIG = {
     "application": {
         "name": "Video Annotation Tool",
-        "version": "0.1.0",
+        "version": "0.0.0",
         "author": "Zulution.AI",
         "enable_hashsum_validation": True,
         "enable_video_preprocessing": False,
@@ -1622,14 +1624,6 @@ class VideoPlayer(QMainWindow):
         """Set the video playlist and load/initialize annotations."""
         self.video_list = video_files
         self.current_video_index = -1
-
-        if CONFIG['application']['enable_video_preprocessing']:
-            for file_path in self.video_list:
-                flow_path = file_path.with_suffix('.fbin')
-                if not flow_path.exists():
-                    flow_data = preprocess_video(file_path)
-                    AppUtils.save_binary(flow_path, flow_data)
-                    logger.info(f"[Player] Calculated and saved optical-flow data to {flow_path}")
         
         # Load existing annotations
         self._load_annotations()
@@ -1708,13 +1702,13 @@ class VideoPlayer(QMainWindow):
         """Modified to handle both direct file path and Path objects."""
         try:
             # Preprocess video's optical flow if necessary
-            flow_path = file_path.with_suffix('.fbin')
+            flow_path = file_path.with_suffix('.npy')
             if flow_path.exists():
-                self.flow_data = AppUtils.load_binary(flow_path)
+                self.flow_data = np.load(flow_path).flatten().tolist()
                 logger.info(f"[Player] Loaded optical-flow data from {flow_path}, length={len(self.flow_data)}")
             else:
                 self.flow_data = preprocess_video(file_path)
-                AppUtils.save_binary(flow_path, self.flow_data)
+                np.save(flow_path, np.asarray(self.flow_data, dtype=np.float64))
                 logger.info(f"[Player] Calculated and saved optical-flow data to {flow_path}")
 
             # Open video file
@@ -2314,12 +2308,12 @@ class VideoPlayer(QMainWindow):
                 path for path in folder_path.rglob("*.mp4")
             ]
             logger.info(f"[Player] Found {len(video_files)} video files in `{folder_path}`")
-            
+
             if not CONFIG['application']['enable_video_preprocessing']:
                 # Check if all videos are already preprocessed
                 video_files_preprocessed = []
                 for video_file in video_files:
-                    flow_path = video_file.with_suffix('.fbin')
+                    flow_path = video_file.with_suffix('.npy')
                     if flow_path.exists():
                         video_files_preprocessed.append(video_file)
                 if len(video_files_preprocessed) < len(video_files):
@@ -2333,6 +2327,26 @@ class VideoPlayer(QMainWindow):
                         f"{_num_s1} video file{_suffix_s1} are loaded, {_num_s2} video file{_suffix_s2} are not preprocessed (total={len(video_files)})."
                     )
                 video_files = video_files_preprocessed
+
+            if CONFIG['application']['enable_video_preprocessing']:
+                parameters = []
+                for file_path in video_files:
+                    flow_path = file_path.with_suffix('.npy')
+                    if not flow_path.exists():
+                        parameters.append((file_path, flow_path))
+
+                def thread_worker(file_path, flow_path):
+                    flow_data = preprocess_video(file_path, disable_tqdm=True)
+                    np.save(flow_path, np.asarray(flow_data, dtype=np.float64))
+                    logger.info(f"[Player] Calculated and saved optical-flow data to {flow_path}")
+
+                from concurrent.futures import ThreadPoolExecutor, as_completed
+                
+                num_workers = 8
+                with ThreadPoolExecutor(max_workers=num_workers) as executor:
+                    futures = [executor.submit(thread_worker, *param) for param in parameters]
+                    for future in as_completed(futures):
+                        _ = future.result()
 
             if not video_files:
                 QMessageBox.warning(

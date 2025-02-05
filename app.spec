@@ -67,5 +67,5 @@ app = BUNDLE(
     name='Zulution VAT Lite.app',
     icon='assets/icon_1024x1024.png',
     bundle_identifier=None,
-    version='0.0.1',
+    version='0.0.2',
 )
