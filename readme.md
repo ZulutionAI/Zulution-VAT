@@ -2,6 +2,11 @@
 
 视频播放器和标注工具，支持简单的视频片段分割、标签标注和关键帧标记。
 
+## 版本信息
+
+- 版本：0.0.3
+- 发布日期：2025-02-05
+
 ## 功能特点
 
 - 支持可变速度的视频播放控制
@@ -33,8 +38,8 @@
 
 ### 片段管理
 - `Esc` - 清除所有片段选择
-- `A` - 将选定片段标记为接受
-- `R` - 将选定片段标记为拒绝
+- `A` - 将选定片段标记为接受（片段将被标记为绿色）
+- `R` - 将选定片段标记为拒绝（片段将被标记为红色）
 - `C` - 清除选定片段的标签
 - `D` - 删除片段，将删除选定片段的起始和结束断点
 
@@ -42,20 +47,19 @@
 - `Command + B` - 在当前帧切换断点
 
 ### 关键帧
-- `Command + G` - 生成关键帧，或清除选定片段的关键帧
-- `K` - 在当前帧切换关键帧
+- `Command + G` - 对于选定片段生成（或清除）关键帧
+- `K` - 确认（或取消）当前帧为关键帧
 
 ## 配置
 
 工具使用 `config.toml` 文件进行配置：
-- 视频文件的输入路径
-- 标注文件位置
+- 程序基本信息
 - 可自定义的接受/拒绝原因
 
 ## 使用方法
 
-1. 启动应用程序
-2. 配置目录中的视频将自动加载
+1. 启动应用程序，创建新的标注文件或打开已有的标注文件
+2. 选择视频文件所在目录（程序将自动扫描目录中的视频文件）
 3. 使用播放控制导航视频，使用`空格键`播放/暂停
 4. 使用`Command + B`添加断点并分割视频片段
 5. 使用鼠标点击选择片段，使用`Esc`清除选择
@@ -69,10 +73,9 @@
 ## 状态管理
 
 工具会自动保存以下信息：
-- 片段，包括标签和接受/拒绝原因
-- 片段中的关键帧
-- 定义片段起始和结束的断点
-- 用于完整性验证的视频文件校验和
+- 片段，包括标签和接受/拒绝原因、关键帧帧号
+- 定义片段起始和结束的断点帧号
+- 用于完整性验证的视频文件SHA-256校验和
 
 状态保存在配置的标注文件中，重新打开视频时会自动加载。
 
@@ -81,6 +84,11 @@
 # Video Annotation Tool
 
 A video player and annotation tool that allows for easy video clip segmentation, labeling, and keyframe marking.
+
+## Versions
+
+- Version: 0.0.3
+- Release Date: 2025-02-05
 
 ## Features
 
@@ -122,20 +130,19 @@ A video player and annotation tool that allows for easy video clip segmentation,
 - `Command + B` - Toggle break point at current frame
 
 ### Keyframes
-- `Command + G` - Generate keyframes, or clear keyframes for selected clip
+- `Command + G` - Generate (or clear) keyframes for selected clip
 - `K` - Toggle keyframe at current frame
 
 ## Configuration
 
 The tool uses a `config.toml` file for configuration:  
-- Input path for video files  
-- Annotation file location  
+- Basic information of the program  
 - Customizable Accept/Reject reasons  
 
 ## Usage
 
-1. Launch the application
-2. Videos from the configured input directory will be loaded automatically
+1. Launch the application, create a new annotation file or open an existing annotation file
+2. Select the directory containing video files (the program will automatically scan the directory for video files)
 3. Use playback controls to navigate through video, use `Space` to play/pause
 4. Use `Command + B` to add break points and segment video into clips
 5. Use mouse click to select clips, use `Esc` to clear selection
@@ -149,9 +156,8 @@ The tool uses a `config.toml` file for configuration:
 ## State Management
 
 The tool automatically saves the following information:  
-- Clips, with labels and accept / reject reasons  
-- Keyframes in clips  
+- Clips, with labels and accept / reject reasons, keyframe frame indices  
 - Break points, which define the start and end of clips  
-- Video file checksums for integrity verification  
+- Video file SHA-256 checksums for integrity verification  
 
 States are saved in the configured annotation file and loaded automatically when reopening videos. 

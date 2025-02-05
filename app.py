@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt, QTimer, QRect
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QPushButton,
     QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QShortcut,
-    QScrollArea, QCheckBox, QDialog, QGroupBox, QRadioButton, QTableWidget, QTableWidgetItem,
+    QScrollArea, QCheckBox, QDialog, QGroupBox, QRadioButton, QTextEdit, QTableWidget, QTableWidgetItem,
     QAction, QTextBrowser, QMessageBox, QFileDialog, QSizePolicy
 )
 from PyQt5.QtGui import QImage, QPixmap, QKeySequence, QPainter, QPen, QColor, QFontMetrics, QLinearGradient
@@ -30,6 +30,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Constants for configuration
+DEFAULT_METAINFO_KEY = "<application:meta-info>"
 DEFAULT_CONFIG = {
     "application": {
         "name": "Video Annotation Tool",
@@ -40,55 +41,30 @@ DEFAULT_CONFIG = {
     },
     "accept_reasons": {
         "_simple": [
-            "Good lighting",
-            "Clear subject",
-            "Composition",
-            "Emotional impact",
-            "Key story moment",
-            "Performance",
-            "Beautiful scenery",
+            "1",
+            "2",
+            "3",
+            "4",
         ],
-        "composition": {
-            "name": "Composition",
+        "3": {
+            "name": "3",
             "options": [
-                "Rule of thirds",
-                "Leading lines",
-                "Symmetrical balance",
-            ]
-        },
-        "performance": {
-            "name": "Performance",
-            "options": [
-                "Natural acting",
-                "Strong emotional delivery",
-                "Good physical performance",
+                "3.1",
+                "3.2",
+                "3.3",
             ]
         }
     },
     "reject_reasons": {
         "_simple": [
-            "Poor lighting",
-            "Blurry/unfocused",
-            "Composition issues",
-            "Uninteresting content",
-            "Technical issues",
-            "Acting issues",
-            "Redundant scene",
+            "1",
+            "2",
         ],
-        "composition": {
-            "name": "Composition issues",
+        "1": {
+            "name": "1",
             "options": [
-                "Unbalanced frame",
-                "Distracting elements",
-                "Poor framing",
-            ]
-        },
-        "performance": {
-            "name": "Acting issues",
-            "options": [
-                "Overacting",
-                "Unconvincing delivery",
-                "Poor timing",
+                "1.1",
+                "1.2",
             ]
         }
     }
@@ -169,7 +145,7 @@ class AppUtils:
                 # Add grouped reasons
                 for key, value in reasons_config.items():
                     if key != '_simple' and isinstance(value, dict):
-                        group = (value['name'], value['options'])
+                        group = (value['name'], value.get('type', 'CheckBox'), value['options'])
                         try:
                             # Replace grouped reasons' name with options
                             loc = result.index(value['name'])
@@ -884,7 +860,7 @@ class LabelDetailsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Label Details")
-        self.setFixedSize(300, 400)
+        self.setMinimumSize(400, 600)
         self.setModal(True)
         
         # Set light theme style
@@ -898,6 +874,21 @@ class LabelDetailsDialog(QDialog):
             }
             QCheckBox:hover, QRadioButton:hover {
                 background-color: #f0f0f0;
+            }
+            QTextEdit {
+                background-color: white;
+                color: black;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 5px;
+                font-size: 14px;
+            }
+            QTextEdit:hover {
+                border: 1px solid #bbb;
+            }
+            QTextEdit:focus {
+                border: 1px solid #999;
+                background-color: #f9f9f9;
             }
             QPushButton {
                 padding: 5px 15px;
@@ -980,14 +971,14 @@ class LabelDetailsDialog(QDialog):
         for reason in reasons:
             if isinstance(reason, str):
                 # Create checkbox for multi-select option
-                cb = QCheckBox(reason)
+                xb = QCheckBox(reason)
                 if current_reasons and reason in current_reasons:
-                    cb.setChecked(True)
-                self.option_widgets.append(cb)
-                self.checkbox_layout.addWidget(cb)
+                    xb.setChecked(True)
+                self.option_widgets.append(xb)
+                self.checkbox_layout.addWidget(xb)
             else:
                 # Create group box with radio buttons for single-select group
-                group_name, options = reason
+                group_name, widget_type, options = reason
                 group = QGroupBox(group_name)
                 group_layout = QVBoxLayout()
                 group_layout.setSpacing(2)
@@ -995,11 +986,11 @@ class LabelDetailsDialog(QDialog):
                 
                 # Create radio buttons
                 for option in options:
-                    rb = QRadioButton(option)
+                    xb = QRadioButton(option) if widget_type == 'RadioButton' else QCheckBox(option)
                     if current_reasons and option in current_reasons:
-                        rb.setChecked(True)
-                    group_layout.addWidget(rb)
-                    self.option_widgets.append(rb)
+                        xb.setChecked(True)
+                    group_layout.addWidget(xb)
+                    self.option_widgets.append(xb)
                 
                 group.setLayout(group_layout)
                 self.checkbox_layout.addWidget(group)
@@ -1013,10 +1004,10 @@ class LabelDetailsDialog(QDialog):
         selected = []
         
         for widget in self.option_widgets:
-            if isinstance(widget, QCheckBox) and widget.isChecked():
+            if isinstance(widget, (QCheckBox, QRadioButton)) and widget.isChecked():
                 selected.append(widget.text())
-            elif isinstance(widget, QRadioButton) and widget.isChecked():
-                selected.append(widget.text())
+            elif isinstance(widget, QTextEdit) and widget.toPlainText().strip():
+                selected.append(widget.toPlainText().strip())
             # Skip QGroupBox widgets
         
         return selected
@@ -1539,6 +1530,10 @@ class VideoPlayer(QMainWindow):
             if target_path and target_path.exists():
                 with open(target_path, 'r') as f:
                     data = json.load(f)
+                    if metainfo := data.pop(DEFAULT_METAINFO_KEY, None):
+                        # TODO: METAINFO validation
+                        # Check if the data is from a valid app version
+                        pass
                     self.annotations = OrderedDict(data)
                 logger.info(f"[Player] Loaded annotations from {target_path}")
                 return True
@@ -1565,7 +1560,11 @@ class VideoPlayer(QMainWindow):
             target_path = file_path or self.annotation_file
             if target_path:
                 with open(target_path, 'w', encoding='utf-8') as f:
-                    json.dump(self.annotations, f, indent=2)
+                    data = {
+                        DEFAULT_METAINFO_KEY: CONFIG['application'],
+                        **self.annotations,
+                    }
+                    json.dump(data, f, indent=2)
                 logger.info(f"[Player] Saved annotations to {target_path}")
                 return True
         except Exception as e:
