@@ -1,0 +1,10 @@
+# Core dependencies
+PyQt5>=5.15.0     # GUI framework
+av>=10.0.0        # Video processing
+toml>=0.10.2      # Configuration file handling
+markdown>=3.4.0    # Markdown rendering for help docs
+
+# Optional dependencies for development
+# pytest>=7.0.0   # Testing
+# black>=22.0.0   # Code formatting
+# pylint>=2.12.0  # Code linting 

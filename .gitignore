@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+
+annotations.json
+
+build/
+dist/
+
+.DS_Store
+
+/.venv
+/.words
+*.zip

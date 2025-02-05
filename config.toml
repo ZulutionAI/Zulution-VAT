@@ -1,0 +1,59 @@
+[application]
+name = "Video Annotation Tool"
+version = "0.1.0"
+author = "Zulution.AI"
+enable_hashsum_validation = true
+enable_video_preprocessing = false
+
+[accept_reasons]
+_simple = [
+    "Good lighting",
+    "Clear subject",
+    "Composition",
+    "Emotional impact",
+    "Key story moment",
+    "Performance",
+    "Beautiful scenery",
+]
+
+[reject_reasons]
+_simple = [
+    "Poor lighting", 
+    "Blurry/unfocused",
+    "Uninteresting content", 
+    "Technical issues", 
+    "Acting issues", 
+    "Redundant scene",
+]
+
+[accept_reasons.composition]
+name = "Composition"
+options = [
+    "Rule of thirds",
+    "Leading lines",
+    "Symmetrical balance",
+]
+
+[accept_reasons.performance]
+name = "Performance"
+options = [
+    "Natural acting",
+    "Strong emotional delivery",
+    "Good physical performance",
+]
+
+[reject_reasons.composition]
+name = "Composition issues"
+options = [
+    "Unbalanced frame",
+    "Distracting elements",
+    "Poor framing",
+]
+
+[reject_reasons.performance]
+name = "Acting issues"
+options = [
+    "Overacting",
+    "Unconvincing delivery",
+    "Poor timing",
+]
