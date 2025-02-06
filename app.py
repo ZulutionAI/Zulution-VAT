@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QPushButton,
     QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QShortcut,
     QScrollArea, QCheckBox, QDialog, QGroupBox, QRadioButton, QTextEdit, QTableWidget, QTableWidgetItem,
-    QAction, QTextBrowser, QMessageBox, QFileDialog, QSizePolicy
+    QAction, QTextBrowser, QMessageBox, QFileDialog, QSizePolicy, QLineEdit
 )
 from PyQt5.QtGui import QImage, QPixmap, QKeySequence, QPainter, QPen, QColor, QFontMetrics, QLinearGradient
 
@@ -447,7 +447,7 @@ class ClipsWidget(QWidget):
                 clip.selected = False
                 selection_changed = True
         if selection_changed:
-            logger.info("[Clips] Cleared all selections")
+            logger.debug("[Clips] Cleared all selections")
             self.update()
             self.player.update_clips_details()
     
@@ -542,13 +542,13 @@ class ClipsWidget(QWidget):
 
             # If user confirms, proceed with deletion
             if msg.exec_() == QMessageBox.Yes:
-                logger.info(f"[Clips] Removing break point at frame {frame}")
+                logger.debug(f"[Clips] Removing break point at frame {frame}")
                 self.break_points.remove(frame)
             else:
-                logger.info("[Clips] Break point removal cancelled by user")
+                logger.debug("[Clips] Break point removal cancelled by user")
         else:
             # Otherwise add new break point
-            logger.info(f"[Clips] Adding break point at frame {frame}")
+            logger.debug(f"[Clips] Adding break point at frame {frame}")
             self.break_points.append(frame)
             self.break_points.sort()
 
@@ -585,13 +585,13 @@ class ClipsWidget(QWidget):
 
             # If user confirms, proceed with deletion
             if msg.exec_() == QMessageBox.Yes:
-                logger.info(f"[Clips] Removing break points at frames {points_to_remove}")
+                logger.debug(f"[Clips] Removing break points at frames {points_to_remove}")
                 self.break_points = [pt for pt in self.break_points if pt not in points_to_remove]
                 self.update_clips()
                 self.update()
                 self.player.update_clips_details()
             else:
-                logger.info("[Clips] Clip deletion cancelled by user")
+                logger.debug("[Clips] Clip deletion cancelled by user")
 
     def get_first_selected_clip_start_frame(self) -> int | None:
         """Get the start frame of the first selected clip."""
@@ -620,30 +620,30 @@ class ClipsWidget(QWidget):
 
                     # If user confirms, proceed with clearing keyframes
                     if msg.exec_() == QMessageBox.Yes:
-                        logger.info(f"[Clips] Clearing keyframes at clip [{clip.start_frame},{clip.end_frame})")
+                        logger.debug(f"[Clips] Clearing keyframes at clip [{clip.start_frame},{clip.end_frame})")
                         clip.clear_keyframes()
-                        logger.info(f"[Clips] Cleared keyframes for clip [{clip.start_frame},{clip.end_frame})")
+                        logger.debug(f"[Clips] Cleared keyframes for clip [{clip.start_frame},{clip.end_frame})")
                     else:
-                        logger.info("[Clips] Clearing keyframes cancelled by user")
+                        logger.debug("[Clips] Clearing keyframes cancelled by user")
                         return
 
                 else:
                     # If clip has no keyframes, generate them
                     clip.generate_keyframes(self.player.flow_data)
-                    logger.info(f"[Clips] Generated keyframes for clip [{clip.start_frame},{clip.end_frame}): count:{len(clip.keyframes)}")
+                    logger.debug(f"[Clips] Generated keyframes for clip [{clip.start_frame},{clip.end_frame}): count:{len(clip.keyframes)}")
                 keyframes_state_changed = True
                 clip.selected = False
                 break  # Only process the first selected and accepted clip
             
         if keyframes_state_changed:
-            logger.info("[Clips] Keyframes state changed")
+            logger.debug("[Clips] Keyframes state changed")
             self.update()
             self.player.timeline_widget.update()  # Update timeline to reflect the keyframe change
             self.player.update_clips_details()
     
     def clear_state(self):
         """Clear all break points and clips."""
-        logger.info("[Clips] Clearing all break points and clips")
+        logger.debug("[Clips] Clearing all break points and clips")
         self.break_points = []
         
         # Create initial clip spanning the entire video if video is loaded
@@ -797,11 +797,11 @@ class ClipsWidget(QWidget):
         # Toggle keyframe
         if frame in clip.keyframes:
             clip.keyframes.remove(frame)
-            logger.info(f"[Clips] Removed keyframe at frame {frame}")
+            logger.debug(f"[Clips] Removed keyframe at frame {frame}")
         else:
             clip.keyframes.append(frame)
             clip.keyframes.sort()  # Keep keyframes sorted
-            logger.info(f"[Clips] Added keyframe at frame {frame}")
+            logger.debug(f"[Clips] Added keyframe at frame {frame}")
         
         self.update()
         self.player.update_clips_details()
@@ -839,10 +839,10 @@ class ClipsWidget(QWidget):
             
         prev_point = self.get_nearest_break_point(self.player.current_frame, 'prev')
         if prev_point is not None:
-            logger.info(f"[Player] Going to previous break point at frame {prev_point}")
+            logger.debug(f"[Player] Going to previous break point at frame {prev_point}")
             self.player.seek_to_frame(prev_point)
         else:
-            logger.info("[Player] No previous break point found")
+            logger.debug("[Player] No previous break point found")
 
     def goto_next_break_point(self):
         """Go to the next break point from current position."""
@@ -851,10 +851,10 @@ class ClipsWidget(QWidget):
             
         next_point = self.get_nearest_break_point(self.player.current_frame, 'next')
         if next_point is not None:
-            logger.info(f"[Player] Going to next break point at frame {next_point}")
+            logger.debug(f"[Player] Going to next break point at frame {next_point}")
             self.player.seek_to_frame(next_point)
         else:
-            logger.info("[Player] No next break point found")
+            logger.debug("[Player] No next break point found")
 
 class LabelDetailsDialog(QDialog):
     def __init__(self, parent=None):
@@ -1207,12 +1207,12 @@ class VideoPlayer(QMainWindow):
         
         # Create top container for left and right panels
         top_container = QWidget()
-        top_container.setStyleSheet("QWidget { border: 2px solid blue; }")
+        # top_container.setStyleSheet("QWidget { border: 2px solid blue; }")
         layout = QHBoxLayout(top_container)
         
         # Left panel (Video preview area)
         left_panel = QWidget()
-        left_panel.setStyleSheet("QWidget { border: 2px solid red; }")
+        # left_panel.setStyleSheet("QWidget { border: 2px solid red; }")
         left_layout = QVBoxLayout(left_panel)
         left_layout.setSpacing(0)  # Remove spacing between widgets
         left_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
@@ -1225,7 +1225,7 @@ class VideoPlayer(QMainWindow):
         
         # Create video container that will expand to fill available space
         self.video_container = QWidget()
-        self.video_container.setStyleSheet("QWidget { border: 2px solid yellow; }")
+        # self.video_container.setStyleSheet("QWidget { border: 2px solid yellow; }")
         self.video_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         video_container_layout = QVBoxLayout(self.video_container)
         video_container_layout.setContentsMargins(0, 0, 0, 0)  # Remove all margins
@@ -1238,13 +1238,13 @@ class VideoPlayer(QMainWindow):
         
         # Control buttons
         controls_widget = QWidget()
-        controls_widget.setStyleSheet("QWidget { border: 2px solid purple; }")
+        # controls_widget.setStyleSheet("QWidget { border: 2px solid purple; }")
         controls_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)  # Fixed height, preferred width
         controls_layout = QHBoxLayout(controls_widget)
         
         # Create a container for the control buttons
         buttons_container = QWidget()
-        buttons_container.setStyleSheet("QWidget { border: 2px solid green; }")
+        # buttons_container.setStyleSheet("QWidget { border: 2px solid green; }")
         buttons_layout = QHBoxLayout(buttons_container)
         buttons_layout.setSpacing(10)
         
@@ -1252,6 +1252,24 @@ class VideoPlayer(QMainWindow):
         left_layout.addWidget(controls_widget, 0)  # Give it a stretch factor of 0
         
         # Add prev/next video buttons and video counter
+        self.navi_button = QPushButton("Navi")
+        self.navi_input = QLineEdit()
+        self.navi_input.setFixedWidth(40)  # Same width as video counter
+        self.navi_input.setAlignment(Qt.AlignCenter)
+        self.navi_input.setFocusPolicy(Qt.ClickFocus)  # Only focus when clicked
+        self.navi_input.setStyleSheet("""
+            QLineEdit {
+                color: white;
+                background-color: #444444;
+                padding: 2px 8px;
+                border-radius: 4px;
+                border: 1px solid #444444;  /* Same as background for no visible border */
+            }
+            QLineEdit:focus {
+                border: 1px solid #666666;  /* Lighter border when focused */
+            }
+        """)
+        self.navi_input.setPlaceholderText("#")  # Add placeholder text
         self.prev_button = QPushButton("Prev")
         self.next_button = QPushButton("Next")
         self.prev_button.setEnabled(False)  # Disabled by default
@@ -1280,9 +1298,22 @@ class VideoPlayer(QMainWindow):
         self.speed_combo.setMinimumWidth(80)  # Set minimum width to fit the text
         self.speed_combo.setFixedWidth(80)    # Fix the width to prevent unwanted resizing
         
+        buttons_layout.addWidget(self.navi_button)
+        buttons_layout.addWidget(self.navi_input)
+        
+        # Add separator between navigation input and prev button
+        separator1 = QLabel("|")
+        separator1.setStyleSheet("QLabel { color: #666666; padding: 0 5px; }")
+        buttons_layout.addWidget(separator1)
+        
         buttons_layout.addWidget(self.prev_button)
         buttons_layout.addWidget(self.video_counter)
         buttons_layout.addWidget(self.next_button)
+
+        # Add separator between next button and playback controls
+        separator2 = QLabel("|")
+        separator2.setStyleSheet("QLabel { color: #666666; padding: 0 5px; }")
+        buttons_layout.addWidget(separator2)
 
         buttons_layout.addWidget(self.start_button)
         buttons_layout.addWidget(self.play_button)
@@ -1300,7 +1331,7 @@ class VideoPlayer(QMainWindow):
         # Right panel (Other functions area)
         right_panel = QWidget()
         right_panel.setFixedWidth(600)
-        right_panel.setStyleSheet("QWidget { border: 2px solid orange; }")
+        # right_panel.setStyleSheet("QWidget { border: 2px solid orange; }")
         right_layout = QVBoxLayout(right_panel)
         
         # Clips details container
@@ -1371,6 +1402,7 @@ class VideoPlayer(QMainWindow):
         self.timer.timeout.connect(self.update_frame)
         
         # Connect button signals
+        self.navi_button.clicked.connect(self.navigate_to_video)
         self.play_button.clicked.connect(self.toggle_playback)
         self.start_button.clicked.connect(self.goto_start)
         self.end_button.clicked.connect(self.goto_end)
@@ -1656,7 +1688,7 @@ class VideoPlayer(QMainWindow):
                 # Verify checksum
                 if saved_state['checksum'] == self.video_file_hash:
                     # Load saved state if checksum matches
-                    logger.info(f"[Player] Loading saved state for {video_path}")
+                    logger.debug(f"[Player] Loading saved state for {video_path}")
                     self.dict_to_state(saved_state)
                 else:
                     # Create new state if checksum doesn't match
@@ -1665,7 +1697,7 @@ class VideoPlayer(QMainWindow):
                     self.annotations[video_path] = self.state_to_dict()
             else:
                 # Create new state if no previous annotation exists
-                logger.info(f"[Player] Creating new state for {video_path}")
+                logger.debug(f"[Player] Creating new state for {video_path}")
                 self.clips_widget.clear_state()
                 self.annotations[video_path] = self.state_to_dict()
             
@@ -1682,6 +1714,24 @@ class VideoPlayer(QMainWindow):
             self.update_navigation_buttons()
             self.video_counter.setText(f"{self.current_video_index + 1}/{len(self.video_list)}")
 
+    def navigate_to_video(self):
+        """Navigate to a specific video by index."""
+        try:
+            # Get input text and convert to integer
+            index = int(self.navi_input.text()) - 1  # Convert to 0-based index
+            
+            # Validate index
+            if 0 <= index < len(self.video_list) and index != self.current_video_index:
+                self.play_video_at_index(index)
+                self.navi_input.clear()  # Clear input after successful navigation
+            else:
+                logger.debug(f"[Player] Invalid navigation index: {index + 1}")
+        except ValueError:
+            logger.debug("[Player] Invalid navigation input: not a number")
+        
+        # Clear focus after navigation attempt
+        self.navi_input.clearFocus()
+    
     def play_prev_video(self):
         """Play the previous video in the playlist."""
         if self.current_video_index > 0:
@@ -1704,11 +1754,11 @@ class VideoPlayer(QMainWindow):
             flow_path = file_path.with_suffix('.npy')
             if flow_path.exists():
                 self.flow_data = np.load(flow_path).flatten().tolist()
-                logger.info(f"[Player] Loaded optical-flow data from {flow_path}, length={len(self.flow_data)}")
+                logger.debug(f"[Player] Loaded optical-flow data from {flow_path}, length={len(self.flow_data)}")
             else:
                 self.flow_data = preprocess_video(file_path)
                 np.save(flow_path, np.asarray(self.flow_data, dtype=np.float64))
-                logger.info(f"[Player] Calculated and saved optical-flow data to {flow_path}")
+                logger.warning(f"[Player] Calculated and saved optical-flow data to {flow_path}")
 
             # Open video file
             self.container = av.open(file_path)
@@ -1789,7 +1839,7 @@ class VideoPlayer(QMainWindow):
             
             # If no frame is available, we've reached the end
             if frame is None:
-                logger.info("[Player] No frame available after seek")
+                logger.warning("[Player] No frame available after seek")
                 if self.is_loop_enabled and self.is_playing:
                     # If loop is enabled and we're playing, jump back to start
                     self.seek_to_frame(self.loop_start_frame)
@@ -1953,9 +2003,9 @@ class VideoPlayer(QMainWindow):
             return
         
         if self.clips_widget.toggle_break_point(self.current_frame):
-            logger.info(f"[Player] Toggled break point at frame {self.current_frame}")
+            logger.debug(f"[Player] Toggled break point at frame {self.current_frame}")
         else:
-            logger.info(f"[Player] Could not toggle break point at frame {self.current_frame}")
+            logger.debug(f"[Player] Could not toggle break point at frame {self.current_frame}")
 
     def clear_clip_selection(self):
         """Clear selection of all clips."""
@@ -1965,7 +2015,7 @@ class VideoPlayer(QMainWindow):
     def delete_selected_clips(self):
         """Delete break points of selected clips after confirmation."""
         if self.container and not self.is_playing:
-            logger.info(f"[Player] Deleting selected clips' break points")
+            logger.debug(f"[Player] Deleting selected clips' break points")
             self.clips_widget.delete_selected_clips_break_points()
     
     def set_clips_label(self, label):
@@ -1991,10 +2041,10 @@ class VideoPlayer(QMainWindow):
         if self.container and not self.is_playing:
             start_frame = self.clips_widget.get_first_selected_clip_start_frame()
             if start_frame is not None:
-                logger.info(f"[Player] Jumping to selected clip's start frame: {start_frame}")
+                logger.debug(f"[Player] Jumping to selected clip's start frame: {start_frame}")
                 self.seek_to_frame(start_frame)
             else:
-                logger.info("[Player] No clip selected to jump to")
+                logger.debug("[Player] No clip selected to jump to")
 
     def reset_clip_keyframes(self):
         """Reset keyframes for the first selected and accepted clip."""
@@ -2008,10 +2058,10 @@ class VideoPlayer(QMainWindow):
             
         prev_frame = self.clips_widget.get_nearest_keyframe(self.current_frame, 'prev')
         if prev_frame is not None:
-            logger.info(f"[Player] Going to previous keyframe at frame {prev_frame}")
+            logger.debug(f"[Player] Going to previous keyframe at frame {prev_frame}")
             self.seek_to_frame(prev_frame)
         else:
-            logger.info("[Player] No previous keyframe found")
+            logger.debug("[Player] No previous keyframe found")
 
     def goto_next_keyframe(self):
         """Go to the next keyframe from current position."""
@@ -2020,10 +2070,10 @@ class VideoPlayer(QMainWindow):
             
         next_frame = self.clips_widget.get_nearest_keyframe(self.current_frame, 'next')
         if next_frame is not None:
-            logger.info(f"[Player] Going to next keyframe at frame {next_frame}")
+            logger.debug(f"[Player] Going to next keyframe at frame {next_frame}")
             self.seek_to_frame(next_frame)
         else:
-            logger.info("[Player] No next keyframe found")
+            logger.debug("[Player] No next keyframe found")
 
     def toggle_current_keyframe(self):
         """Toggle keyframe at current frame position."""
@@ -2031,10 +2081,10 @@ class VideoPlayer(QMainWindow):
             return
             
         if self.clips_widget.toggle_keyframe(self.current_frame):
-            logger.info(f"[Player] Toggled keyframe at frame {self.current_frame}")
+            logger.debug(f"[Player] Toggled keyframe at frame {self.current_frame}")
             self.timeline_widget.update()  # Update timeline to reflect the keyframe change
         else:
-            logger.info(f"[Player] Could not toggle keyframe at frame {self.current_frame}")
+            logger.debug(f"[Player] Could not toggle keyframe at frame {self.current_frame}")
 
     def get_nearest_break_point(self, current_frame: int, direction: Literal['prev', 'next']) -> int | None:
         """
@@ -2068,10 +2118,10 @@ class VideoPlayer(QMainWindow):
             
         prev_point = self.get_nearest_break_point(self.current_frame, 'prev')
         if prev_point is not None:
-            logger.info(f"[Player] Going to previous break point at frame {prev_point}")
+            logger.debug(f"[Player] Going to previous break point at frame {prev_point}")
             self.seek_to_frame(prev_point)
         else:
-            logger.info("[Player] No previous break point found, going to start")
+            logger.debug("[Player] No previous break point found, going to start")
             self.goto_start()
 
     def goto_next_break_point(self):
@@ -2081,10 +2131,10 @@ class VideoPlayer(QMainWindow):
             
         next_point = self.get_nearest_break_point(self.current_frame, 'next')
         if next_point is not None:
-            logger.info(f"[Player] Going to next break point at frame {next_point}")
+            logger.debug(f"[Player] Going to next break point at frame {next_point}")
             self.seek_to_frame(next_point)
         else:
-            logger.info("[Player] No next break point found, going to end")
+            logger.debug("[Player] No next break point found, going to end")
             self.goto_end()
 
     def find_connected_clips_range(self) -> tuple[int, int] | None:
@@ -2117,22 +2167,22 @@ class VideoPlayer(QMainWindow):
             self.loop_start_frame = None
             self.loop_end_frame = None
             self.timeline_widget.set_loop_range(None, None)
-            logger.info("[Player] Loop playback disabled")
+            logger.debug("[Player] Loop playback disabled")
             return
         
         # Find connected range
         loop_range = self.find_connected_clips_range()
         if not loop_range:
-            logger.info("[Player] Could not determine loop range")
+            logger.debug("[Player] Could not determine loop range")
             return
         else:
-            logger.info(f"[Player] Loop range: [{loop_range[0]}, {loop_range[1]})")
+            logger.debug(f"[Player] Loop range: [{loop_range[0]}, {loop_range[1]})")
             
         # Set loop range
         self.loop_start_frame, self.loop_end_frame = loop_range
         self.is_loop_enabled = True
         self.timeline_widget.set_loop_range(self.loop_start_frame, self.loop_end_frame)
-        logger.info(f"[Player] Loop playback enabled: [{self.loop_start_frame}, {self.loop_end_frame})")
+        logger.debug(f"[Player] Loop playback enabled: [{self.loop_start_frame}, {self.loop_end_frame})")
         
         # If current frame is outside loop range, seek to start
         if self.current_frame < self.loop_start_frame or self.current_frame >= self.loop_end_frame:
@@ -2399,6 +2449,55 @@ class VideoPlayer(QMainWindow):
                 "No videos loaded. Application will now exit."
             )
             sys.exit()
+
+    def mousePressEvent(self, event):
+        """Handle mouse press events on the main window."""
+        # Get the widget under the mouse cursor
+        widget = self.childAt(event.pos())
+        
+        # If clicked widget is not navi_input or navi_button, clear and unfocus navi_input
+        if widget not in [self.navi_input, self.navi_button]:
+            self.navi_input.clear()
+            self.navi_input.clearFocus()
+        
+        # If clicked widget is not clips_widget or clips_list, clear clips_widget
+        if widget not in [self.timeline_widget, self.clips_widget]:
+            self.clips_widget.clear_selection()
+        
+        # Call parent class implementation
+        super().mousePressEvent(event)
+
+    def showEvent(self, event):
+        """Handle window show event."""
+        super().showEvent(event)
+        
+        # If we already have a video loaded, recalculate its size
+        if self.container and self.video_stream:
+            # Get video dimensions
+            width = self.video_stream.width
+            height = self.video_stream.height
+            
+            # Get the actual size of the video container
+            container_width = self.video_container.width()
+            container_height = self.video_container.height()
+            
+            # Calculate scaling factor to fit in the container area
+            available_width = container_width
+            available_height = container_height
+            
+            scale_w = available_width / width
+            scale_h = available_height / height
+            scale = min(scale_w, scale_h)  # Use the smaller scale to fit both dimensions
+            
+            # Calculate new dimensions
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            
+            # Update video label size
+            self.video_label.setFixedSize(new_width, new_height)
+            
+            # Force an update of the current frame
+            self.update_frame()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

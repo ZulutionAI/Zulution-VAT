@@ -4,6 +4,10 @@ av>=10.0.0        # Video processing
 toml>=0.10.2      # Configuration file handling
 markdown>=3.4.0    # Markdown rendering for help docs
 
+numpy>=1.26.4     # Numerical computing
+pillow>=11.0.0    # Image processing
+pyinstaller>=6.0.0 # PyInstaller for building the application
+
 # Optional dependencies for development
 # pytest>=7.0.0   # Testing
 # black>=22.0.0   # Code formatting
