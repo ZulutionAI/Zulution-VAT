@@ -51,7 +51,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='icon_128x128.icns',
+    icon='assets/icon_512x512.png',
 )
 coll = COLLECT(
     exe,
@@ -65,7 +65,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='Zulution VAT Lite.app',
-    icon='assets/icon_1024x1024.png',
+    icon='assets/icon_512x512.png',
     bundle_identifier=None,
-    version='0.0.3',
+    version='0.0.4',
 )

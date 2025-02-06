@@ -123,37 +123,37 @@ class AppUtils:
     @classmethod
     def load_config(cls):
         """Load configuration from TOML file or create default if not exists."""
+        # Convert reasons to the format expected by the application
+        def convert_reasons(reasons_config):
+            result = []
+            # Add simple reasons
+            result.extend(reasons_config['_simple'])
+            # Add grouped reasons
+            for key, value in reasons_config.items():
+                if key != '_simple' and isinstance(value, dict):
+                    group = (value['name'], value.get('type', 'CheckBox'), value['options'])
+                    try:
+                        # Replace grouped reasons' name with options
+                        loc = result.index(value['name'])
+                        result[loc] = group
+                    except ValueError:
+                        # Otherwise, append the group
+                        result.append(group)
+            return result
+        
         try:
             configuration_file = Path(cls.get_resource_path("config.toml"))
             if configuration_file.exists():
-                with open(configuration_file, 'r') as f:  # Read TOML file
+                with open(configuration_file, 'r', encoding='utf-8') as f:  # Read TOML file
                     config = toml.load(f)
                     logger.info(f"[Config] Loaded configuration from {configuration_file}")
             else:
                 config = DEFAULT_CONFIG
                 # Create default config file
                 configuration_file.parent.mkdir(parents=True, exist_ok=True)
-                with open(configuration_file, 'w') as f:
+                with open(configuration_file, 'w', encoding='utf-8') as f:
                     toml.dump(DEFAULT_CONFIG, f)
                 logger.info(f"[Config] Created default configuration at {configuration_file}")
-            
-            # Convert reasons to the format expected by the application
-            def convert_reasons(reasons_config):
-                result = []
-                # Add simple reasons
-                result.extend(reasons_config['_simple'])
-                # Add grouped reasons
-                for key, value in reasons_config.items():
-                    if key != '_simple' and isinstance(value, dict):
-                        group = (value['name'], value.get('type', 'CheckBox'), value['options'])
-                        try:
-                            # Replace grouped reasons' name with options
-                            loc = result.index(value['name'])
-                            result[loc] = group
-                        except ValueError:
-                            # Otherwise, append the group
-                            result.append(group)
-                return result
             
             config['accept_reasons'] = convert_reasons(config['accept_reasons'])
             config['reject_reasons'] = convert_reasons(config['reject_reasons'])
@@ -1163,7 +1163,7 @@ class MarkdownDialog(QDialog):
         
         # Load and render markdown
         try:
-            with open(markdown_file, 'r') as f:
+            with open(markdown_file, 'r', encoding='utf-8') as f:
                 markdown_text = f.read()
                 html = markdown.markdown(markdown_text)
                 self.text_browser.setHtml(html)
@@ -1528,7 +1528,7 @@ class VideoPlayer(QMainWindow):
             # Use provided path or fall back to self.annotation_file
             target_path = file_path or self.annotation_file
             if target_path and target_path.exists():
-                with open(target_path, 'r') as f:
+                with open(target_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     if metainfo := data.pop(DEFAULT_METAINFO_KEY, None):
                         # TODO: METAINFO validation
