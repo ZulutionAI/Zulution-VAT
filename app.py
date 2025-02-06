@@ -1428,12 +1428,12 @@ class VideoPlayer(QMainWindow):
     
     def show_help(self):
         """Show the help dialog with readme content."""
-        dialog = MarkdownDialog("Help - Usage Guide", Path(AppUtils.get_resource_path("readme.md")), self)
+        dialog = MarkdownDialog("Help - Usage Guide", Path(AppUtils.get_resource_path("README.md")), self)
         dialog.exec_()
     
     def show_about(self):
         """Show the about dialog with license content."""
-        dialog = MarkdownDialog("About - License", Path(AppUtils.get_resource_path("license.md")), self)
+        dialog = MarkdownDialog("About - License", Path(AppUtils.get_resource_path("LICENSE.md")), self)
         dialog.exec_()
 
     def setup_shortcuts(self):

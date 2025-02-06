@@ -14,8 +14,8 @@ a = Analysis(
     ],
     datas=[
         ('config.toml', '.'),
-        ('license.md', '.'),
-        ('readme.md', '.'),
+        ('LICENSE.md', '.'),
+        ('README.md', '.'),
     ],
     hiddenimports=[],
     hookspath=[],
@@ -40,7 +40,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='ZVAT Lite',
+    name='Zulution VAT Lite',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -60,12 +60,12 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='ZVAT Lite',
+    name='Zulution VAT Lite',
 )
 app = BUNDLE(
     coll,
     name='Zulution VAT Lite.app',
     icon='assets/icon_512x512.png',
     bundle_identifier=None,
-    version='0.0.4',
+    version='0.0.5',
 )

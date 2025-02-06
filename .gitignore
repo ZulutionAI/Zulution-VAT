@@ -2,9 +2,11 @@ __pycache__/
 *.pyc
 
 annotations.json
-
+archive/
 build/
 dist/
+release/
+venv/
 
 .DS_Store
 

@@ -1,0 +1,14 @@
+# PyInstaller Package
+
+python -m venv venv
+
+# *nix system
+# source venv/bin/activate
+# pip install -r requirements.txt
+
+# Windows system
+venv\Scripts\activate
+pip install pyinstaller PyQt5 numpy av pillow toml markdown
+
+# PyInstaller
+pyinstaller app.spec

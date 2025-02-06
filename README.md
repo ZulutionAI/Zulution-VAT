@@ -4,7 +4,7 @@
 
 ## 版本信息
 
-- 版本：0.0.4
+- 版本：0.0.5
 - 发布日期：2025-02-06
 
 ## 功能特点
@@ -18,6 +18,8 @@
 - 自动状态保存和加载
 
 ## 快捷键指南
+
+(在Windows系统中，使用`Ctrl`键；在macOS系统中，使用`Command`键)
 
 ### 播放控制
 - `空格键` - 播放/暂停
@@ -87,8 +89,8 @@ A video player and annotation tool that allows for easy video clip segmentation,
 
 ## Versions
 
-- Version: 0.0.3
-- Release Date: 2025-02-05
+- Version: 0.0.5
+- Release Date: 2025-02-06
 
 ## Features
 
@@ -101,6 +103,8 @@ A video player and annotation tool that allows for easy video clip segmentation,
 - Automatic state saving and loading
 
 ## Shortcuts Guide
+
+(In Windows, use `Ctrl` key; in macOS, use `Command` key)
 
 ### Playback Control
 - `Space` - Play/Pause
