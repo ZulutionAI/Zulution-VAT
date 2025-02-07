@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QPushButton,
     QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QShortcut,
     QScrollArea, QCheckBox, QDialog, QGroupBox, QRadioButton, QTextEdit, QTableWidget, QTableWidgetItem,
-    QAction, QTextBrowser, QMessageBox, QFileDialog, QSizePolicy, QLineEdit
+    QAction, QTextBrowser, QMessageBox, QFileDialog, QSizePolicy, QLineEdit, QDesktopWidget
 )
 from PyQt5.QtGui import QImage, QPixmap, QKeySequence, QPainter, QPen, QColor, QFontMetrics, QLinearGradient
 
@@ -194,9 +194,8 @@ class TimelineWidget(QWidget):
         self.min_pixels_per_tick = 50
         
         # Cursor properties
-        self.cursor_x = 0
+        self.cursor_x_rel = 0  # percentage of total width
         self.is_dragging = False
-        self.cursor_width = 2
         
         # Loop range properties
         self.loop_start_frame = None
@@ -238,7 +237,7 @@ class TimelineWidget(QWidget):
         self.current_frame = frame
         # Calculate cursor position
         if self.total_frames > 0:
-            self.cursor_x = int((frame / self.total_frames) * self.width())
+            self.cursor_x_rel = float(frame / self.total_frames)
         self.update()
     
     def mousePressEvent(self, event):
@@ -264,25 +263,13 @@ class TimelineWidget(QWidget):
             frame = max(0, min(frame, self.total_frames - 1))
             
             # Update cursor position to exact frame position
-            update_x = int((frame / self.total_frames) * self.width())
-            if update_x != self.cursor_x:
+            update_x_rel = float(frame / self.total_frames)
+            if int(update_x_rel * self.width()) != int(self.cursor_x_rel * self.width()):
                 logger.debug(f"[Timeline] Cursor moved to x={x}, calculated frame={frame}")
-                self.cursor_x = update_x
+                self.cursor_x_rel = update_x_rel
                 self.player.seek_to_frame(frame)
         
         self.update()
-    
-    # TODO: Implement zoom in/out to scale timeline
-    # def wheelEvent(self, event):
-    #     # Handle zoom with mouse wheel
-    #     if event.angleDelta().y() > 0:
-    #         self.scale_factor *= 1.2
-    #     else:
-    #         self.scale_factor /= 1.2
-    #
-    #     # Limit zoom range
-    #     self.scale_factor = max(0.1, min(10.0, self.scale_factor))
-    #     self.update()
     
     def set_loop_range(self, start_frame: int | None, end_frame: int | None):
         """Set the loop range to be displayed."""
@@ -351,7 +338,8 @@ class TimelineWidget(QWidget):
             painter.drawText(x - text_width//2, self.height() - 15, text)
         
         # Draw cursor rectangle
-        self.cursor_width = max(2, int(self.width() / self.total_frames))  # At least 2 pixels wide
+        cursor_width = max(2, int(self.width() / self.total_frames))  # At least 2 pixels wide
+        cursor_x_abs = int(self.cursor_x_rel * self.width())
         
         # Choose cursor color based on whether current frame is a keyframe
         cursor_color = self.keyframe_cursor_color if self.is_current_frame_keyframe() else self.cursor_color
@@ -359,23 +347,23 @@ class TimelineWidget(QWidget):
         cursor_color.setAlpha(128)  # Make it semi-transparent
         
         # Create gradient for cursor
-        gradient = QLinearGradient(self.cursor_x, 0, self.cursor_x + self.cursor_width, 0)
+        gradient = QLinearGradient(cursor_x_abs, 0, cursor_x_abs + cursor_width, 0)
         gradient.setColorAt(0, cursor_color)
         gradient.setColorAt(0.5, cursor_color)
         gradient.setColorAt(1, QColor(cursor_color.red(), cursor_color.green(), cursor_color.blue(), 0))
         
         # Draw cursor rectangle with gradient
         painter.fillRect(
-            self.cursor_x, 
+            cursor_x_abs, 
             0, 
-            self.cursor_width, 
+            cursor_width, 
             self.height(), 
             gradient
         )
         
         # Draw thin cursor line at exact position with the same color as the cursor
         painter.setPen(QPen(cursor_color, 1))
-        painter.drawLine(self.cursor_x, 0, self.cursor_x, self.height())
+        painter.drawLine(cursor_x_abs, 0, cursor_x_abs, self.height())
 
 class Clip:
     def __init__(self, start_frame, end_frame):
@@ -742,7 +730,6 @@ class ClipsWidget(QWidget):
                 for frame in clip.keyframes:
                     x = int((frame / total_frames) * width)
                     painter.drawLine(x, 0, x, keyframes_marker_height)
-                    painter.drawLine(x, 0, x + self.player.timeline_widget.cursor_width, 0)
 
     def get_clip_at_frame(self, frame) -> Clip | None:
         """Get the clip that contains the given frame."""
@@ -860,7 +847,19 @@ class LabelDetailsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Label Details")
+        
+        # Get screen size and calculate initial window size
+        screen = QDesktopWidget().screenGeometry()
+        width = min(int(screen.width() * 0.3), 600)
+        height = min(int(screen.height() * 0.7), 800)
+        
+        # Set size and minimum size
+        self.resize(width, height)
         self.setMinimumSize(400, 600)
+        
+        # Allow window resizing
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMaximizeButtonHint | Qt.WindowMinimizeButtonHint)
+        
         self.setModal(True)
         
         # Set light theme style
@@ -1147,12 +1146,23 @@ class ClipsDetailsWidget(QTableWidget):
             
         self.blockSignals(False)
 
-class MarkdownDialog(QDialog):
+class MarkdownWindow(QWidget):
     def __init__(self, title: str, markdown_file: Path, parent=None):
         super().__init__(parent)
         logger.info(f"Markdown [{title}] file: {markdown_file}")
         self.setWindowTitle(title)
-        self.resize(600, 400)
+        
+        # Set window flags to make it act like a normal window
+        self.setWindowFlags(Qt.Window)
+        
+        # Get screen size and calculate initial window size
+        screen = QDesktopWidget().screenGeometry()
+        width = min(int(screen.width() * 0.4), 1000)
+        height = min(int(screen.height() * 0.6), 800)
+        
+        # Set size and minimum size
+        self.resize(width, height)
+        self.setMinimumSize(400, 200)
         
         # Create layout
         layout = QVBoxLayout(self)
@@ -1177,10 +1187,9 @@ class VideoPlayer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Video Player")
-        self.setFixedSize(1440, 800)
         
-        # Add annotation file path
-        self.annotation_file = None
+        # Get screen size and calculate initial window size
+        self.adjust_window_size()
         
         # Create menu bar
         self.create_menu_bar()
@@ -1193,6 +1202,12 @@ class VideoPlayer(QMainWindow):
         self.is_loop_enabled = False
         self.loop_start_frame = None
         self.loop_end_frame = None
+        
+        # QImage frame storage
+        self._frame: QImage = None  # Store the original decoded frame's QImage
+        
+        # Annotation file path
+        self.annotation_file = None
         
         # Annotation state
         self.annotations: OrderedDict[str, Dict[str, Any]] = OrderedDict()
@@ -1219,7 +1234,7 @@ class VideoPlayer(QMainWindow):
         
         # Video display
         self.video_label = QLabel()
-        self.video_label.setMinimumSize(800, 400)  # Set a reasonable minimum size
+        self.video_label.setMinimumSize(720, 360)  # Set a reasonable minimum size
         self.video_label.setStyleSheet("QLabel { background-color: black; border: 2px solid white; }")
         self.video_label.setAlignment(Qt.AlignCenter)
         
@@ -1410,6 +1425,31 @@ class VideoPlayer(QMainWindow):
         self.next_button.clicked.connect(self.play_next_video)
         self.speed_combo.currentTextChanged.connect(self.change_speed)
         
+    def adjust_window_size(self):
+        """Adjust window size based on screen resolution."""
+        # Get the screen where the window is/will be
+        screen = QDesktopWidget().screenGeometry()
+        screen_width = screen.width()
+        screen_height = screen.height()
+        
+        # Calculate window size based on screen size
+        # Use different ratios for different screen sizes
+        if screen_width >= 2560:  # 4K and larger
+            width = int(screen_width * 0.6)
+            height = int(screen_height * 0.7)
+        elif screen_width >= 1920:  # Full HD
+            width = int(screen_width * 0.7)
+            height = int(screen_height * 0.8)
+        else:  # Smaller screens
+            width = int(screen_width * 0.8)
+            height = int(screen_height * 0.85)
+            
+        # Set minimum size to ensure usability
+        self.setMinimumSize(1440, 600)
+        
+        # Set initial size
+        self.resize(width, height)
+    
     def create_menu_bar(self):
         """Create the menu bar with File and Help options."""
         menubar = self.menuBar()
@@ -1460,13 +1500,13 @@ class VideoPlayer(QMainWindow):
     
     def show_help(self):
         """Show the help dialog with readme content."""
-        dialog = MarkdownDialog("Help - Usage Guide", Path(AppUtils.get_resource_path("README.md")), self)
-        dialog.exec_()
+        dialog = MarkdownWindow("Help - Usage Guide", Path(AppUtils.get_resource_path("README.md")), self)
+        dialog.show()
     
     def show_about(self):
         """Show the about dialog with license content."""
-        dialog = MarkdownDialog("About - License", Path(AppUtils.get_resource_path("LICENSE.md")), self)
-        dialog.exec_()
+        dialog = MarkdownWindow("About - License", Path(AppUtils.get_resource_path("LICENSE.md")), self)
+        dialog.show()
 
     def setup_shortcuts(self):
         # Command + Left for goto_start
@@ -1811,6 +1851,45 @@ class VideoPlayer(QMainWindow):
         except Exception as e:
             logger.error(f"Error opening video: {e}")
     
+    def adjust_video_display_size(self):
+        """Adjust video label size and scale the current frame if available."""
+        if not self.video_stream:
+            return
+            
+        # Get video dimensions
+        width = self.video_stream.width
+        height = self.video_stream.height
+        
+        # Get the actual size of the video container
+        container_width = self.video_container.width()
+        container_height = self.video_container.height()
+        
+        # Calculate scaling factor to fit in the container area
+        available_width = container_width
+        available_height = container_height
+        
+        scale_w = available_width / width
+        scale_h = available_height / height
+        scale = min(scale_w, scale_h)
+        
+        # Calculate new dimensions
+        new_width = int(width * scale)
+        new_height = int(height * scale)
+        
+        # Update video label size
+        self.video_label.setFixedSize(new_width, new_height)
+        
+        # If we have a frame, scale and display it
+        if self._frame is not None:
+            # Scale image to fit the label exactly
+            scaled_pixmap = QPixmap.fromImage(self._frame).scaled(
+                new_width,
+                new_height,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
+            self.video_label.setPixmap(scaled_pixmap)
+    
     def update_frame(self):
         if not self.container:
             return
@@ -1858,14 +1937,11 @@ class VideoPlayer(QMainWindow):
             h, w = image.shape[:2]
             bytes_per_line = 3 * w
             image = QImage(image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            # Store the original frame
+            self._frame: QImage = image
             
-            # Scale image to fit the label exactly (we've already calculated the correct size)
-            scaled_pixmap = QPixmap.fromImage(image).scaled(
-                self.video_label.size(), 
-                Qt.KeepAspectRatio, 
-                Qt.SmoothTransformation
-            )
-            self.video_label.setPixmap(scaled_pixmap)
+            # Display the frame at current size
+            self.adjust_video_display_size()
             logger.debug("[Player] Frame displayed successfully")
             
             # Only increment frame counter during normal playback
@@ -1882,6 +1958,39 @@ class VideoPlayer(QMainWindow):
         except Exception as e:
             logger.error(f"Error updating frame: {e}")
             self.timer.stop()
+
+    def mousePressEvent(self, event):
+        """Handle mouse press events on the main window."""
+        # Get the widget under the mouse cursor
+        widget = self.childAt(event.pos())
+        
+        # If clicked widget is not navi_input or navi_button, clear and unfocus navi_input
+        if widget not in [self.navi_input, self.navi_button]:
+            self.navi_input.clear()
+            self.navi_input.clearFocus()
+        
+        # If clicked widget is not clips_widget or clips_list, clear clips_widget
+        if widget not in [self.timeline_widget, self.clips_widget]:
+            self.clips_widget.clear_selection()
+        
+        # Call parent class implementation
+        super().mousePressEvent(event)
+    
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        # Only adjust display size using stored frame
+        self.adjust_video_display_size()
+    
+    def showEvent(self, event):
+        super().showEvent(event)
+        # Adjust display size using stored frame
+        self.adjust_video_display_size()
+
+    def closeEvent(self, event):
+        """Handle application close event."""
+        # Always save state on exit
+        self.save_current_state()
+        event.accept()
     
     def toggle_playback(self):
         if self.has_ended:  # If video has ended, restart from beginning
@@ -1928,33 +2037,6 @@ class VideoPlayer(QMainWindow):
         self.playback_speed = float(speed_text.replace('x', ''))
         if self.is_playing:
             self.timer.setInterval(int(1000 / (self.video_stream.average_rate * self.playback_speed)))
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        # If we have a video loaded, recalculate its size when the window is resized
-        if self.container and self.video_stream:
-            # Get video dimensions
-            width = self.video_stream.width
-            height = self.video_stream.height
-            
-            # Get the actual size of the video container
-            container_width = self.video_container.width()
-            container_height = self.video_container.height()
-            
-            # Calculate scaling factor to fit in the container area
-            available_width = container_width
-            available_height = container_height
-            
-            scale_w = available_width / width
-            scale_h = available_height / height
-            scale = min(scale_w, scale_h)
-            
-            # Calculate new dimensions
-            new_width = int(width * scale)
-            new_height = int(height * scale)
-            
-            # Update video label size
-            self.video_label.setFixedSize(new_width, new_height)
 
     def seek_to_frame(self, frame_index, force_update=False):
         """Seek to a specific frame index."""
@@ -2029,12 +2111,6 @@ class VideoPlayer(QMainWindow):
             current_video = str(self.video_list[self.current_video_index])
             self.annotations[current_video] = self.state_to_dict()
             self._save_annotations()
-
-    def closeEvent(self, event):
-        """Handle application close event."""
-        # Always save state on exit
-        self.save_current_state()
-        event.accept()
 
     def jump_to_selected_clip_start(self):
         """Jump to the start frame of the first selected clip."""
@@ -2449,55 +2525,6 @@ class VideoPlayer(QMainWindow):
                 "No videos loaded. Application will now exit."
             )
             sys.exit()
-
-    def mousePressEvent(self, event):
-        """Handle mouse press events on the main window."""
-        # Get the widget under the mouse cursor
-        widget = self.childAt(event.pos())
-        
-        # If clicked widget is not navi_input or navi_button, clear and unfocus navi_input
-        if widget not in [self.navi_input, self.navi_button]:
-            self.navi_input.clear()
-            self.navi_input.clearFocus()
-        
-        # If clicked widget is not clips_widget or clips_list, clear clips_widget
-        if widget not in [self.timeline_widget, self.clips_widget]:
-            self.clips_widget.clear_selection()
-        
-        # Call parent class implementation
-        super().mousePressEvent(event)
-
-    def showEvent(self, event):
-        """Handle window show event."""
-        super().showEvent(event)
-        
-        # If we already have a video loaded, recalculate its size
-        if self.container and self.video_stream:
-            # Get video dimensions
-            width = self.video_stream.width
-            height = self.video_stream.height
-            
-            # Get the actual size of the video container
-            container_width = self.video_container.width()
-            container_height = self.video_container.height()
-            
-            # Calculate scaling factor to fit in the container area
-            available_width = container_width
-            available_height = container_height
-            
-            scale_w = available_width / width
-            scale_h = available_height / height
-            scale = min(scale_w, scale_h)  # Use the smaller scale to fit both dimensions
-            
-            # Calculate new dimensions
-            new_width = int(width * scale)
-            new_height = int(height * scale)
-            
-            # Update video label size
-            self.video_label.setFixedSize(new_width, new_height)
-            
-            # Force an update of the current frame
-            self.update_frame()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

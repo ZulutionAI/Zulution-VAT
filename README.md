@@ -4,8 +4,8 @@
 
 ## 版本信息
 
-- 版本：0.0.6
-- 发布日期：2025-02-06
+- 版本：0.1.0
+- 发布日期：2025-02-07
 
 ## 功能特点
 
@@ -89,8 +89,8 @@ A video player and annotation tool that allows for easy video clip segmentation,
 
 ## Versions
 
-- Version: 0.0.6
-- Release Date: 2025-02-06
+- Version: 0.1.0
+- Release Date: 2025-02-07
 
 ## Features
 
