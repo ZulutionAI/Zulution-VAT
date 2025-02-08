@@ -1197,6 +1197,8 @@ class VideoPlayer(QMainWindow):
         # Video playlist variables
         self.video_list = []
         self.current_video_index = -1
+        self.video_path = None
+        self.video_checksum = None
         
         # Loop playback state
         self.is_loop_enabled = False
@@ -1624,9 +1626,8 @@ class VideoPlayer(QMainWindow):
         """
         try:
             # Save current clips state if we have a video loaded
-            if self.current_video_index >= 0:
-                current_video = str(self.video_list[self.current_video_index])
-                self.annotations[current_video] = self.state_to_dict()
+            if self.current_video_index >= 0 and self.video_path and self.video_checksum:
+                self.annotations[self.video_checksum] = self.state_to_dict()
             
             # Use provided path or fall back to self.annotation_file
             target_path = file_path or self.annotation_file
@@ -1657,7 +1658,8 @@ class VideoPlayer(QMainWindow):
             clips_data.append(clip_data)
             
         return {
-            'checksum': self.video_file_hash,
+            'filepath': self.video_path,
+            'checksum': self.video_checksum,
             'clips': clips_data,
             'break_points': self.clips_widget.break_points
         }
@@ -1695,6 +1697,8 @@ class VideoPlayer(QMainWindow):
         """Set the video playlist and load/initialize annotations."""
         self.video_list = video_files
         self.current_video_index = -1
+        self.video_path = None
+        self.video_checksum = None
         
         # Load existing annotations
         self._load_annotations()
@@ -1707,39 +1711,38 @@ class VideoPlayer(QMainWindow):
         """Play the video at the specified index in the playlist."""
         if 0 <= index < len(self.video_list):
             # Save current clips state before switching
-            if self.current_video_index >= 0:
-                self.save_current_state()
+            self._save_annotations()
             
             # Update index and open video first
             self.current_video_index = index
-            video_path = str(self.video_list[index])
+            self.video_path = str(self.video_list[index])
             
             # Step 1: Open video to get video_stream
             self.open_video(self.video_list[index])
             
             # Step 2: Calculate checksum
-            self.video_file_hash = AppUtils.checksum(self.video_list[index])
-            logger.info(f"[Player] Playing video at index {index}, file:{video_path}, SHA-256:{self.video_file_hash}")
+            self.video_checksum = AppUtils.checksum(self.video_list[index])
+            logger.info(f"[Player] Playing video at index {index}, file:{self.video_path}, SHA-256:{self.video_checksum}")
             
             # Step 3 & 4: Check and handle state
-            if video_path in self.annotations:
-                saved_state = self.annotations[video_path]
+            if self.video_checksum in self.annotations:
+                saved_state = self.annotations[self.video_checksum]
                 
                 # Verify checksum
-                if saved_state['checksum'] == self.video_file_hash:
+                if saved_state['checksum'] == self.video_checksum:
                     # Load saved state if checksum matches
-                    logger.debug(f"[Player] Loading saved state for {video_path}")
+                    logger.debug(f"[Player] Loading saved state for {self.video_path}")
                     self.dict_to_state(saved_state)
                 else:
                     # Create new state if checksum doesn't match
-                    logger.warning(f"[Player] Video file has changed! Old SHA-256: {saved_state['checksum']}, New SHA-256: {self.video_file_hash}")
+                    logger.warning(f"[Player] Video file has changed! Old SHA-256: {saved_state['checksum']}, New SHA-256: {self.video_checksum}")
                     self.clips_widget.clear_state()
-                    self.annotations[video_path] = self.state_to_dict()
+                    self.annotations[self.video_checksum] = self.state_to_dict()
             else:
                 # Create new state if no previous annotation exists
-                logger.debug(f"[Player] Creating new state for {video_path}")
+                logger.debug(f"[Player] Creating new state for {self.video_path}")
                 self.clips_widget.clear_state()
-                self.annotations[video_path] = self.state_to_dict()
+                self.annotations[self.video_checksum] = self.state_to_dict()
             
             # Reset playback controls
             self.play_button.setText("▶")
@@ -1989,7 +1992,7 @@ class VideoPlayer(QMainWindow):
     def closeEvent(self, event):
         """Handle application close event."""
         # Always save state on exit
-        self.save_current_state()
+        self._save_annotations()
         event.accept()
     
     def toggle_playback(self):
@@ -2104,13 +2107,6 @@ class VideoPlayer(QMainWindow):
         """Set the label for selected clips."""
         if self.container and not self.is_playing:
             self.clips_widget.set_selected_clips_label(label)
-
-    def save_current_state(self) -> None:
-        """Save the current state to annotations and file."""
-        if self.current_video_index >= 0:
-            current_video = str(self.video_list[self.current_video_index])
-            self.annotations[current_video] = self.state_to_dict()
-            self._save_annotations()
 
     def jump_to_selected_clip_start(self):
         """Jump to the start frame of the first selected clip."""
@@ -2416,7 +2412,7 @@ class VideoPlayer(QMainWindow):
     def open_video_folder(self):
         """Open a folder and load all video files in it."""
         # Save current state before switching to new folder
-        self.save_current_state()
+        self._save_annotations()
         
         # Get folder path from user
         folder_path = QFileDialog.getExistingDirectory(
