@@ -15,6 +15,7 @@ from pathlib import Path
 preprocess_video = lambda **kwargs: None
 
 import hashlib
+import copy
 import sys
 import os
 import av
@@ -1605,11 +1606,26 @@ class VideoPlayer(QMainWindow):
                 with open(target_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     if metainfo := data.pop(DEFAULT_METAINFO_KEY, None):
-                        # TODO: METAINFO validation
+                        version = lambda ver_s: tuple(map(int, ver_s.split('.')))
+                        ann_ver = version(metainfo.get('version', '0.0.0'))
+                        app_ver = version(CONFIG['application']['version'])
+                        # NOTE: METAINFO validation
                         # Check if the data is from a valid app version
-                        pass
+                        if ann_ver < (0, 1, 1):
+                            # Convert annotations
+                            converted_data = dict()
+                            for key, value in data.items():
+                                if key == DEFAULT_METAINFO_KEY:
+                                    continue
+                                checksum = value['checksum']
+                                converted_data[checksum] = {
+                                    'filepath': key,
+                                    **value,
+                                }
+                            data = copy.deepcopy(converted_data)
+                            logger.info(f"[Player] Annotations converted from {ann_ver} to {app_ver}, len={len(data)}")
                     self.annotations = OrderedDict(data)
-                logger.info(f"[Player] Loaded annotations from {target_path}")
+                logger.info(f"[Player] Loaded annotations from {target_path}, len={len(self.annotations)}")
                 return True
         except Exception as e:
             logger.error(f"[Player] Error loading annotations: {e}")
@@ -1638,7 +1654,7 @@ class VideoPlayer(QMainWindow):
                         **self.annotations,
                     }
                     json.dump(data, f, indent=2)
-                logger.info(f"[Player] Saved annotations to {target_path}")
+                logger.info(f"[Player] Saved annotations to {target_path}, len={len(self.annotations)}")
                 return True
         except Exception as e:
             logger.error(f"[Player] Error saving annotations: {e}")
@@ -1692,20 +1708,6 @@ class VideoPlayer(QMainWindow):
                 self.clips_widget.clip_color,
                 self.clips_widget.selected_color
             )
-
-    def set_video_list(self, video_files):
-        """Set the video playlist and load/initialize annotations."""
-        self.video_list = video_files
-        self.current_video_index = -1
-        self.video_path = None
-        self.video_checksum = None
-        
-        # Load existing annotations
-        self._load_annotations()
-        
-        self.update_navigation_buttons()
-        # Update counter with total videos
-        self.video_counter.setText(f"0/{len(self.video_list)}")
 
     def play_video_at_index(self, index):
         """Play the video at the specified index in the playlist."""
@@ -2411,8 +2413,6 @@ class VideoPlayer(QMainWindow):
 
     def open_video_folder(self):
         """Open a folder and load all video files in it."""
-        # Save current state before switching to new folder
-        self._save_annotations()
         
         # Get folder path from user
         folder_path = QFileDialog.getExistingDirectory(
@@ -2477,8 +2477,16 @@ class VideoPlayer(QMainWindow):
                 )
                 return False
             
+            # Save current state before switching to new folder
+            self._save_annotations()
+            self.current_video_index = -1
+            self.video_path = None
+            self.video_checksum = None
             # Set up new video list
-            self.set_video_list(video_files)
+            self.video_list = video_files
+            # Update UI buttons and counter with total videos
+            self.update_navigation_buttons()
+            self.video_counter.setText(f"0/{len(self.video_list)}")
             self.play_video_at_index(0)
             return True
             

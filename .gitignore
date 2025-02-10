@@ -8,6 +8,8 @@ dist/
 release/
 venv/
 
+scripts/*.csv
+
 .DS_Store
 
 /.venv

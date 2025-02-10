@@ -104,8 +104,10 @@ def scan_videos(root_dir: Path, max_workers: int = 16) -> List[Dict]:
 
 if __name__ == '__main__':
     # 设置要扫描的根目录
-    root_dir = Path('example_data-v250206.1')  # 可以根据需要修改目录
-    
+    # root_dir = Path('example_data-v250206.1')  # 可以根据需要修改目录
+    s = input()
+    root_dir = Path(s)
+
     # 扫描所有视频文件
     logger.info("开始扫描视频文件...")
     video_infos = scan_videos(root_dir)
@@ -121,10 +123,10 @@ if __name__ == '__main__':
         # 打印一些基本统计信息
         logger.info("\n基本统计信息:")
         logger.info(f"总视频数: {len(df)}")
-        logger.info(f"总时长: {df['duration'].sum()/3600:.2f} 小时")
-        logger.info(f"平均时长: {df['duration'].mean()/60:.2f} 分钟")
-        logger.info(f"最短视频: {df['duration'].min()/60:.2f} 分钟")
-        logger.info(f"最长视频: {df['duration'].max()/60:.2f} 分钟")
+        logger.info(f"总时长: {df['duration'].sum()/3600:.2f} 小时 ~ {df['duration'].sum()/60:.2f} 分钟")
+        logger.info(f"平均时长: {df['duration'].mean()/60:.2f} 分钟 ~ {df['duration'].mean():.2f} 秒")
+        logger.info(f"最短视频: {df['duration'].min()/60:.2f} 分钟 ~ {df['duration'].min():.2f} 秒")
+        logger.info(f"最长视频: {df['duration'].max()/60:.2f} 分钟 ~ {df['duration'].max():.2f} 秒")
         logger.info(f"\n结果已保存到: {output_file}")
     else:
         logger.error("未找到任何视频文件或处理过程中出现错误")

@@ -1,6 +1,6 @@
 [application]
 name = "Video Annotation Tool"
-version = "0.1.1"
+version = "0.1.2"
 author = "Zulution.AI"
 enable_hashsum_validation = true
 enable_video_preprocessing = false
