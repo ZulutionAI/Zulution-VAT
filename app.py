@@ -1576,9 +1576,11 @@ class VideoPlayer(QMainWindow):
         shortcut_jump_to_clip_start = QShortcut(QKeySequence(Qt.Key_J), self)
         shortcut_jump_to_clip_start.activated.connect(self.jump_to_selected_clip_start)
         
-        # Add Command+G shortcut for resetting keyframes
-        shortcut_generate_keyframes = QShortcut(QKeySequence("Ctrl+G"), self)
-        shortcut_generate_keyframes.activated.connect(self.reset_clip_keyframes)
+        # NOTE: v0.2.0
+        # Skip optical-flow calculation ...
+        # # Add Command+G shortcut for resetting keyframes
+        # shortcut_generate_keyframes = QShortcut(QKeySequence("Ctrl+G"), self)
+        # shortcut_generate_keyframes.activated.connect(self.reset_clip_keyframes)
         
         # Add comma/period shortcuts for keyframe navigation
         shortcut_prev_keyframe = QShortcut(QKeySequence(Qt.Key_Comma), self)
@@ -1795,15 +1797,17 @@ class VideoPlayer(QMainWindow):
     def open_video(self, file_path: Path):
         """Modified to handle both direct file path and Path objects."""
         try:
-            # Preprocess video's optical flow if necessary
-            flow_path = file_path.with_suffix('.npy')
-            if flow_path.exists():
-                self.flow_data = np.load(flow_path).flatten().tolist()
-                logger.debug(f"[Player] Loaded optical-flow data from {flow_path}, length={len(self.flow_data)}")
-            else:
-                self.flow_data = preprocess_video(file_path)
-                np.save(flow_path, np.asarray(self.flow_data, dtype=np.float64))
-                logger.warning(f"[Player] Calculated and saved optical-flow data to {flow_path}")
+            # NOTE: v0.2.0
+            # Skip flow data calculation ...
+            # # Preprocess video's optical flow if necessary
+            # flow_path = file_path.with_suffix('.npy')
+            # if flow_path.exists():
+            #     self.flow_data = np.load(flow_path).flatten().tolist()
+            #     logger.debug(f"[Player] Loaded optical-flow data from {flow_path}, length={len(self.flow_data)}")
+            # else:
+            #     self.flow_data = preprocess_video(file_path)
+            #     np.save(flow_path, np.asarray(self.flow_data, dtype=np.float64))
+            #     logger.warning(f"[Player] Calculated and saved optical-flow data to {flow_path}")
 
             # Open video file
             self.container = av.open(file_path)
@@ -2430,44 +2434,47 @@ class VideoPlayer(QMainWindow):
             ]
             logger.info(f"[Player] Found {len(video_files)} video files in `{folder_path}`")
 
-            if not CONFIG['application']['enable_video_preprocessing']:
-                # Check if all videos are already preprocessed
-                video_files_preprocessed = []
-                for video_file in video_files:
-                    flow_path = video_file.with_suffix('.npy')
-                    if flow_path.exists():
-                        video_files_preprocessed.append(video_file)
-                if len(video_files_preprocessed) < len(video_files):
-                    _num_s1 = len(video_files_preprocessed)
-                    _num_s2 = len(video_files) - len(video_files_preprocessed)
-                    _suffix_s1 = 's' if _num_s1 > 1 else ''
-                    _suffix_s2 = 's' if _num_s2 > 1 else ''
-                    QMessageBox.warning(
-                        self,
-                        "Preprocessing Required",
-                        f"{_num_s1} video file{_suffix_s1} are loaded, {_num_s2} video file{_suffix_s2} are not preprocessed (total={len(video_files)})."
-                    )
-                video_files = video_files_preprocessed
+            # NOTE: v0.2.0
+            # Skip optical-flow calculation ...
 
-            if CONFIG['application']['enable_video_preprocessing']:
-                parameters = []
-                for file_path in video_files:
-                    flow_path = file_path.with_suffix('.npy')
-                    if not flow_path.exists():
-                        parameters.append((file_path, flow_path))
+            # if not CONFIG['application']['enable_video_preprocessing']:
+            #     # Check if all videos are already preprocessed
+            #     video_files_preprocessed = []
+            #     for video_file in video_files:
+            #         flow_path = video_file.with_suffix('.npy')
+            #         if flow_path.exists():
+            #             video_files_preprocessed.append(video_file)
+            #     if len(video_files_preprocessed) < len(video_files):
+            #         _num_s1 = len(video_files_preprocessed)
+            #         _num_s2 = len(video_files) - len(video_files_preprocessed)
+            #         _suffix_s1 = 's' if _num_s1 > 1 else ''
+            #         _suffix_s2 = 's' if _num_s2 > 1 else ''
+            #         QMessageBox.warning(
+            #             self,
+            #             "Preprocessing Required",
+            #             f"{_num_s1} video file{_suffix_s1} are loaded, {_num_s2} video file{_suffix_s2} are not preprocessed (total={len(video_files)})."
+            #         )
+            #     video_files = video_files_preprocessed
 
-                def thread_worker(file_path, flow_path):
-                    flow_data = preprocess_video(file_path, disable_tqdm=True)
-                    np.save(flow_path, np.asarray(flow_data, dtype=np.float64))
-                    logger.info(f"[Player] Calculated and saved optical-flow data to {flow_path}")
+            # if CONFIG['application']['enable_video_preprocessing']:
+            #     parameters = []
+            #     for file_path in video_files:
+            #         flow_path = file_path.with_suffix('.npy')
+            #         if not flow_path.exists():
+            #             parameters.append((file_path, flow_path))
 
-                from concurrent.futures import ThreadPoolExecutor, as_completed
+            #     def thread_worker(file_path, flow_path):
+            #         flow_data = preprocess_video(file_path, disable_tqdm=True)
+            #         np.save(flow_path, np.asarray(flow_data, dtype=np.float64))
+            #         logger.info(f"[Player] Calculated and saved optical-flow data to {flow_path}")
+
+            #     from concurrent.futures import ThreadPoolExecutor, as_completed
                 
-                num_workers = 8
-                with ThreadPoolExecutor(max_workers=num_workers) as executor:
-                    futures = [executor.submit(thread_worker, *param) for param in parameters]
-                    for future in as_completed(futures):
-                        _ = future.result()
+            #     num_workers = 8
+            #     with ThreadPoolExecutor(max_workers=num_workers) as executor:
+            #         futures = [executor.submit(thread_worker, *param) for param in parameters]
+            #         for future in as_completed(futures):
+            #             _ = future.result()
 
             if not video_files:
                 QMessageBox.warning(

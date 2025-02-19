@@ -4,7 +4,7 @@
 
 ## 版本信息
 
-- 版本：0.1.2
+- 版本：0.2.0
 - 发布日期：2025-02-10
 
 ## 功能特点
@@ -49,7 +49,6 @@
 - `Command + B` - 在当前帧切换断点
 
 ### 关键帧
-- `Command + G` - 对于选定片段生成（或清除）关键帧
 - `K` - 确认（或取消）当前帧为关键帧
 
 ## 配置
@@ -67,10 +66,9 @@
 5. 使用鼠标点击选择片段，使用`Esc`清除选择
 6. 使用`A` / `R`标记选定片段，使用`C`清除片段标签
 7. 使用`K`添加（或删除）选定片段的关键帧，使用`,`和`.`导航关键帧
-8. 使用`Command + G`为选定片段生成关键帧
-9. 使用`J`跳转到选定片段的起始帧
-10. 使用`L`切换选定片段的循环播放
-11. 所有更改都会自动保存
+8. 使用`J`跳转到选定片段的起始帧
+9. 使用`L`切换选定片段的循环播放
+10. 所有更改都会自动保存
 
 ## 状态管理
 
@@ -89,7 +87,7 @@ A video player and annotation tool that allows for easy video clip segmentation,
 
 ## Versions
 
-- Version: 0.1.2
+- Version: 0.2.0
 - Release Date: 2025-02-10
 
 ## Features
@@ -134,7 +132,6 @@ A video player and annotation tool that allows for easy video clip segmentation,
 - `Command + B` - Toggle break point at current frame
 
 ### Keyframes
-- `Command + G` - Generate (or clear) keyframes for selected clip
 - `K` - Toggle keyframe at current frame
 
 ## Configuration
@@ -152,10 +149,9 @@ The tool uses a `config.toml` file for configuration:
 5. Use mouse click to select clips, use `Esc` to clear selection
 6. Use `A` / `R` to label selected clips, use `C` to clear label of selected clips
 7. Use `K` to add (or remove) keyframes for selected clips, use `,` and `.` to navigate through keyframes
-8. Use `Command + G` to generate keyframes for selected clips
-9. Use `J` to jump to the start frame of selected clips
-10. Use `L` to toggle loop playback for selected clips
-11. All changes are automatically saved
+8. Use `J` to jump to the start frame of selected clips
+9. Use `L` to toggle loop playback for selected clips
+10. All changes are automatically saved
 
 ## State Management
 

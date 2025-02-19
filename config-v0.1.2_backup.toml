@@ -1,0 +1,135 @@
+[application]
+name = "Video Annotation Tool"
+version = "0.2.0"
+author = "Zulution.AI"
+enable_hashsum_validation = true
+enable_video_preprocessing = false
+
+[accept_reasons]
+_simple = [
+    "画面速度",
+    "相机运动",
+    "场景类型",
+    "画面构图",
+    "光影、色彩",
+    "美学特征",
+    "其他",
+]
+
+[accept_reasons.motion]
+name = "画面速度"
+type = "RadioButton"
+options = [
+    "非常慢速",
+    "慢速",
+    "中速",
+    "快速",
+    "非常快速",
+    "多种运动速度（非单一类型）",
+    "其他速度类型",
+]
+
+[accept_reasons.camera_movement]
+name = "相机运动"
+type = "RadioButton"
+options = [
+    "固定拍摄",
+    "推轨拍摄（镜头沿轨道运动推拉、焦距固定）",
+    "变焦拍摄（镜头固定、焦距变化）",
+    "推轨变焦拍摄（希区柯克变焦）",
+    "水平摇摄 - 向左转动",
+    "水平摇摄 - 向右转动",
+    "垂直摇摄 - 向上转动",
+    "垂直摇摄 - 向下转动",
+    "旋转镜头 - 顺时针",
+    "旋转镜头 - 逆时针",
+    "跟踪镜头",
+    "环绕镜头",
+    "手持拍摄（非稳定器）",
+    "无人机拍摄",
+    "复合运动类型（非单一类型）",
+    "其他相机运动类型",
+]
+
+[accept_reasons.scene]
+name = "场景类型"
+options = [
+    "对话场景",
+    "动作场景",
+    "环境场景",
+    "人物介绍",
+    "情感场景",
+    "建立镜头",
+    "过程记录",
+    "其他场景类型",
+]
+
+[accept_reasons.composition]
+name = "画面构图"
+options = [
+    "平衡构图，三分、对称、黄金比例等",
+    "非平衡构图",
+    "视觉重心突出",
+    "动态感强（例如利用极端透视或视角形成视觉引导）",
+]
+
+[accept_reasons.lighting_color]
+name = "光影、色彩"
+options = [
+    "光影层次丰富",
+    "明暗对比强烈",
+    "色彩搭配和谐",
+    "光影、色彩风格化强烈",
+]
+
+[accept_reasons.aesthetic_features]
+name = "美学特征"
+options = [
+    "构图富有美感",
+    "镜头运动流畅",
+    "画面运动有节奏感",
+    "表演自然，情绪突出",
+    "环境细节丰富",
+    "材质与纹理清晰、富有质感",
+    "焦点控制（例如通过前后景虚化形成对比）",
+    "其他美学特征",
+]
+
+[reject_reasons]
+_simple = [
+    "剪辑效果",
+    "后期合成字幕",
+    "画面完全静止",
+    "片段时长过短",
+    "内容问题",
+    "技术问题",
+    "其他",
+]
+
+[reject_reasons.post_editing_issues]
+name = "后期合成字幕"
+options = [
+    "片头（含字幕）",
+    "片尾（含字幕）",
+    "台词、叙述字幕",
+    "后期特效字幕",
+]
+
+[reject_reasons.content_issues]
+name = "内容问题"
+options = [
+    "内容无意义、难以理解",
+    "光影、色彩等（例如过度曝光或曝光不足）",
+    "对焦不准、全景深失焦",
+    "过分模糊、抖动严重导致无法看清",
+    "主体不明确、动作或视角混乱",
+    "过分抽象或艺术化等",
+]
+
+[reject_reasons.technical_issues]
+name = "技术问题"
+options = [
+    "解码问题（例如画面冻结）",
+    "帧率问题",
+    "分辨率过低",
+]
