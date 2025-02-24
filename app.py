@@ -1253,6 +1253,7 @@ class VideoPlayer(QMainWindow):
         # Add filename label
         self.filename_label = QLabel()
         self.filename_label.setStyleSheet("QLabel { color: black; padding: 5px; font-size: 12px; }")
+        self.filename_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.filename_label.setAlignment(Qt.AlignLeft)
         video_container_layout.addWidget(self.filename_label, 0, Qt.AlignLeft)  # Add with left alignment
 
