@@ -1249,6 +1249,13 @@ class VideoPlayer(QMainWindow):
         video_container_layout.setContentsMargins(0, 0, 0, 0)  # Remove all margins
         video_container_layout.setSpacing(0)  # Remove spacing
         video_container_layout.setAlignment(Qt.AlignCenter)  # Center alignment for the layout itself
+
+        # Add filename label
+        self.filename_label = QLabel()
+        self.filename_label.setStyleSheet("QLabel { color: black; padding: 5px; font-size: 12px; }")
+        self.filename_label.setAlignment(Qt.AlignLeft)
+        video_container_layout.addWidget(self.filename_label, 0, Qt.AlignLeft)  # Add with left alignment
+
         video_container_layout.addWidget(self.video_label, 0, Qt.AlignCenter)  # Explicit center alignment
         
         # Add video container to left layout
@@ -1296,7 +1303,7 @@ class VideoPlayer(QMainWindow):
         # Add video counter label
         self.video_counter = QLabel("0/0")
         self.video_counter.setStyleSheet("QLabel { color: white; background-color: #444444; padding: 2px 8px; border-radius: 4px; }")
-        self.video_counter.setFixedWidth(60)
+        self.video_counter.setFixedWidth(80)
         self.video_counter.setAlignment(Qt.AlignCenter)
         
         self.start_button = QPushButton("⏮")
@@ -1797,6 +1804,9 @@ class VideoPlayer(QMainWindow):
     def open_video(self, file_path: Path):
         """Modified to handle both direct file path and Path objects."""
         try:
+            # Update filename label
+            self.filename_label.setText(Path(file_path).name)
+
             # NOTE: v0.2.0
             # Skip flow data calculation ...
             # # Preprocess video's optical flow if necessary
