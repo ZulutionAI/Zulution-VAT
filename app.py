@@ -1,9 +1,9 @@
-from PyQt5.QtCore import Qt, QTimer, QRect
+from PyQt5.QtCore import Qt, QTimer, QRect, QUrl, QMimeData
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QPushButton,
     QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QShortcut,
     QScrollArea, QCheckBox, QDialog, QGroupBox, QRadioButton, QTextEdit, QTableWidget, QTableWidgetItem,
-    QAction, QTextBrowser, QMessageBox, QFileDialog, QSizePolicy, QLineEdit, QDesktopWidget
+    QAction, QTextBrowser, QMessageBox, QFileDialog, QSizePolicy, QLineEdit, QDesktopWidget, QStyle
 )
 from PyQt5.QtGui import QImage, QPixmap, QKeySequence, QPainter, QPen, QColor, QFontMetrics, QLinearGradient
 
@@ -1250,12 +1250,62 @@ class VideoPlayer(QMainWindow):
         video_container_layout.setSpacing(0)  # Remove spacing
         video_container_layout.setAlignment(Qt.AlignCenter)  # Center alignment for the layout itself
 
+        # Create a horizontal layout for filename and copy button
+        filename_container = QWidget()
+        filename_layout = QHBoxLayout(filename_container)
+        filename_layout.setContentsMargins(0, 0, 0, 0)
+        filename_layout.setSpacing(5)  # Small spacing between label and button
+
         # Add filename label
         self.filename_label = QLabel()
         self.filename_label.setStyleSheet("QLabel { color: black; padding: 5px; font-size: 12px; }")
         self.filename_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.filename_label.setAlignment(Qt.AlignLeft)
-        video_container_layout.addWidget(self.filename_label, 0, Qt.AlignLeft)  # Add with left alignment
+        filename_layout.addWidget(self.filename_label)
+
+        # Add copy button
+        self.copy_button = QPushButton()
+        self.copy_button.setIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton))
+        self.copy_button.setToolTip("Copy file path to clipboard")
+        self.copy_button.setFixedSize(24, 24)
+        self.copy_button.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(255, 255, 255, 0.1);
+                border: none;
+                border-radius: 4px;
+                padding: 2px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+            QPushButton:pressed {
+                background-color: rgba(255, 255, 255, 0.3);
+            }
+        """)
+        self.copy_button.clicked.connect(self.copy_file_to_clipboard)
+        filename_layout.addWidget(self.copy_button)
+
+        # Add copy feedback label
+        self.copy_feedback_label = QLabel("File Copied!")
+        self.copy_feedback_label.setStyleSheet("""
+            QLabel {
+                color: #2ecc71;
+                background-color: rgba(0, 0, 0, 0.7);
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 11px;
+            }
+        """)
+        self.copy_feedback_label.hide()  # Initially hidden
+        filename_layout.addWidget(self.copy_feedback_label)
+
+        # Create timer for feedback message
+        self.copy_feedback_timer = QTimer()
+        self.copy_feedback_timer.setSingleShot(True)  # Timer will only fire once
+        self.copy_feedback_timer.timeout.connect(self.hide_copy_feedback)
+
+        filename_layout.addStretch()  # Add stretch to keep elements left-aligned
+        video_container_layout.addWidget(filename_container, 0, Qt.AlignLeft)
 
         video_container_layout.addWidget(self.video_label, 0, Qt.AlignCenter)  # Explicit center alignment
         
@@ -2547,6 +2597,30 @@ class VideoPlayer(QMainWindow):
                 "No videos loaded. Application will now exit."
             )
             sys.exit()
+
+    def copy_file_to_clipboard(self):
+        """Copy the current video file path to system clipboard with proper file metadata."""
+        if hasattr(self, 'video_path') and self.video_path:
+            clipboard = QApplication.clipboard()
+
+            mime_data = QMimeData()
+
+            # Create a QUrl from the local file path
+            mime_data.setUrls([QUrl.fromLocalFile(str(self.video_path))])
+
+            # Set text representation of the file path
+            mime_data.setText(str(self.video_path))
+
+            # Set the mime data to clipboard
+            clipboard.setMimeData(mime_data)
+
+            # Show feedback and start timer
+            self.copy_feedback_label.show()
+            self.copy_feedback_timer.start(1000)  # Hide after 1 second
+
+    def hide_copy_feedback(self):
+        """Hide the copy feedback label."""
+        self.copy_feedback_label.hide()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

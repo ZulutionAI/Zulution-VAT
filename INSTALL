@@ -12,3 +12,7 @@ pip install pyinstaller PyQt5 numpy av pillow toml markdown
 
 # PyInstaller
 pyinstaller app.spec
+
+
+# Pack into DMG
+hdiutil create -volname ZVAT -srcfolder "dist/Zulution VAT Lite.app" -ov -format UDZO ZVAT.dmg
