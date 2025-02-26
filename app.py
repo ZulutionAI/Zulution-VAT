@@ -1586,6 +1586,13 @@ class VideoPlayer(QMainWindow):
         shortcut_toggle_loop = QShortcut(QKeySequence(Qt.Key_L), self)
         shortcut_toggle_loop.activated.connect(self.toggle_loop_playback)
 
+        # Add Shift+[, and Shift+] for previous, next video
+        shortcut_prev_video = QShortcut(QKeySequence("Shift+["), self)
+        shortcut_prev_video.activated.connect(self.play_prev_video)
+
+        shortcut_next_video = QShortcut(QKeySequence("Shift+]"), self)
+        shortcut_next_video.activated.connect(self.play_next_video)
+
         # Add Shift+, and Shift+. for break point navigation
         shortcut_prev_break_point = QShortcut(QKeySequence("Shift+,"), self)
         shortcut_prev_break_point.activated.connect(self.goto_prev_break_point)

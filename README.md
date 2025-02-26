@@ -5,7 +5,7 @@
 ## 版本信息
 
 - 版本：0.2.1
-- 发布日期：2025-02-24
+- 发布日期：2025-02-26
 
 ## 功能特点
 
@@ -26,6 +26,8 @@
 - `Command + 左箭头` - 跳转到视频开始
 - `Command + 右箭头` - 跳转到视频结束
 - `L` - 切换选定片段的循环播放
+- `Shift + [` - 播放前一个视频
+- `Shift + ]` - 播放下一个视频
 
 ### 帧导航
 - `左箭头` - 上一帧
@@ -88,7 +90,7 @@ A video player and annotation tool that allows for easy video clip segmentation,
 ## Versions
 
 - Version: 0.2.1
-- Release Date: 2025-02-24
+- Release Date: 2025-02-26
 
 ## Features
 
@@ -109,6 +111,8 @@ A video player and annotation tool that allows for easy video clip segmentation,
 - `Command + Left` - Go to video start
 - `Command + Right` - Go to video end
 - `L` - Toggle loop playback for selected clips
+- `Shift + [` - Play previous video
+- `Shift + ]` - Play next video
 
 ### Frame Navigation
 - `Left Arrow` - Previous frame
