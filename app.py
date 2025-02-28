@@ -1026,14 +1026,15 @@ class ClipsDetailsWidget(QTableWidget):
         self.player = player
         
         # Set up the table
-        self.setColumnCount(4)
-        self.setHorizontalHeaderLabels(["Interval", "Label", "Reasons", "Keyframes"])
+        self.setColumnCount(5)
+        self.setHorizontalHeaderLabels(["Interval", "Duration", "Label", "Reasons", "Keyframes"])
         
         # Set column widths
         self.setColumnWidth(0, 100)  # Interval column
-        self.setColumnWidth(1, 50)   # Label column
-        self.setColumnWidth(2, 200)  # Reasons column (reduced width)
-        self.setColumnWidth(3, 100)  # Keyframes column
+        self.setColumnWidth(1, 100)  # Duration column
+        self.setColumnWidth(2, 50)   # Label column
+        self.setColumnWidth(3, 200)  # Reasons column (reduced width)
+        self.setColumnWidth(4, 100)  # Keyframes column
         
         # Enable alternating row colors
         self.setAlternatingRowColors(True)
@@ -1105,6 +1106,11 @@ class ClipsDetailsWidget(QTableWidget):
             # Interval
             interval_item = QTableWidgetItem(f"[{clip.start_frame},{clip.end_frame})")
             interval_item.setTextAlignment(Qt.AlignCenter)
+
+            # Duration
+            duration_sec = float((clip.end_frame - clip.start_frame) / self.player.video_stream.average_rate) if self.player.video_stream else None
+            duration_item = QTableWidgetItem(f"{duration_sec:.03f}s" if duration_sec else "")
+            duration_item.setTextAlignment(Qt.AlignCenter)
             
             # Label
             label_item = QTableWidgetItem(clip.label[0] if clip.label else "")
@@ -1120,9 +1126,10 @@ class ClipsDetailsWidget(QTableWidget):
             
             # Set items
             self.setItem(i, 0, interval_item)
-            self.setItem(i, 1, label_item)
-            self.setItem(i, 2, reasons_item)
-            self.setItem(i, 3, keyframes_item)  # Add keyframes column
+            self.setItem(i, 1, duration_item)
+            self.setItem(i, 2, label_item)
+            self.setItem(i, 3, reasons_item)
+            self.setItem(i, 4, keyframes_item)  # Add keyframes column
             
             # Set background color based on state
             if clip.selected:
@@ -1136,7 +1143,7 @@ class ClipsDetailsWidget(QTableWidget):
                 }[clip.label]
             
             # Apply color to all cells in the row
-            for col in range(4):  # Changed from 3 to 4
+            for col in range(5):
                 self.item(i, col).setBackground(color)
         
         # Update table selection to match clip selection
