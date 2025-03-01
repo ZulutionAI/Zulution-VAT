@@ -1,0 +1,58 @@
+[application]
+name = "Video Annotation Tool"
+version = "0.2.1"
+author = "Zulution.AI"
+enable_hashsum_validation = true
+enable_video_preprocessing = false
+
+[accept_reasons]
+_simple = [
+    "略",
+]
+
+[reject_reasons]
+_simple = [
+    "转场、剪辑效果",
+    "后期合成字幕",
+    "镜头画面静止",
+    "内容问题",
+    "技术问题",
+    "其他",
+]
+
+[reject_reasons.post_editing_issues]
+name = "后期合成字幕"
+options = [
+    "片头（含字幕）",
+    "片尾（含字幕）",
+    "台词、叙述字幕",
+    "后期特效字幕",
+]
+
+[reject_reasons.motion_issues]
+name = "镜头画面静止"
+options = [
+    "画面完全静止",
+    "（动漫）完全静止帧时长超过片段总时长70%",
+]
+
+[reject_reasons.content_issues]
+name = "内容问题"
+options = [
+    "内容无意义、难以理解",
+    "光影、色彩问题（例如过曝或欠曝使得画面太亮或太暗、以至于难以看清内容）",
+    "对焦不准、全景深失焦",
+    "过分模糊、抖动严重导致无法看清",
+    "主体不明确、动作或视角混乱",
+    "过分抽象或艺术化等",
+    "电脑录屏（录屏部分占画面主体）",
+]
+
+[reject_reasons.technical_issues]
+name = "技术问题"
+options = [
+    "解码问题（例如画面卡顿、冻结）",
+    "帧率问题",
+    "分辨率过低",
+    "低保真度、噪点过多（例如画质老旧，老式摄像机、监控录像拍摄）",
+]

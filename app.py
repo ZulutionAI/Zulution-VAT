@@ -507,7 +507,7 @@ class ClipsWidget(QWidget):
         if event.button() == Qt.LeftButton:
             # Find which clip was clicked
             for clip in self.clips:
-                if clip.contains_point(event.x(), self.width(), self.player.video_stream.frames):
+                if clip.contains_point(event.x(), self.width(), self.player.total_frames):
                     clip.selected = not clip.selected
                     self.update()
                     self.player.update_clips_details()
@@ -637,8 +637,7 @@ class ClipsWidget(QWidget):
         
         # Create initial clip spanning the entire video if video is loaded
         if self.player.video_stream:
-            total_frames = self.player.video_stream.frames
-            self.clips = [Clip(0, total_frames)]
+            self.clips = [Clip(0, self.player.total_frames)]
         else:
             self.clips = []
             
@@ -648,8 +647,6 @@ class ClipsWidget(QWidget):
     def update_clips(self):
         if not self.player.video_stream:
             return
-            
-        total_frames = self.player.video_stream.frames
         
         # Create new clips list while preserving selection and label states
         new_clips = []
@@ -666,9 +663,9 @@ class ClipsWidget(QWidget):
             last_frame = break_point
             
         # Add final clip
-        final_clip = Clip(last_frame, total_frames)
-        if (last_frame, total_frames) in old_clips:
-            final_clip.selected, final_clip.label, final_clip.reasons, final_clip.keyframes = old_clips[(last_frame, total_frames)]
+        final_clip = Clip(last_frame, self.player.total_frames)
+        if (last_frame, self.player.total_frames) in old_clips:
+            final_clip.selected, final_clip.label, final_clip.reasons, final_clip.keyframes = old_clips[(last_frame, self.player.total_frames)]
         new_clips.append(final_clip)
         
         self.clips = new_clips
@@ -680,15 +677,14 @@ class ClipsWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         
-        total_frames = self.player.video_stream.frames
         width = self.width()
         height = self.height()
         
         # Draw clips
         for clip in self.clips:
             # Calculate clip rectangle
-            x1 = int((clip.start_frame / total_frames) * width)
-            x2 = int((clip.end_frame / total_frames) * width)
+            x1 = int((clip.start_frame / self.player.total_frames) * width)
+            x2 = int((clip.end_frame / self.player.total_frames) * width)
             rect = QRect(x1, 0, x2 - x1, height)
             
             # Draw clip rectangle with appropriate color
@@ -720,7 +716,7 @@ class ClipsWidget(QWidget):
         # Draw cut lines
         painter.setPen(QPen(self.cut_line_color, 1))
         for break_point in self.break_points:
-            x = int((break_point / total_frames) * width)
+            x = int((break_point / self.player.total_frames) * width)
             painter.drawLine(x, 0, x, height)
 
         # Draw keyframe markers in keyframes area (only for Accept clips)
@@ -729,7 +725,7 @@ class ClipsWidget(QWidget):
             if clip.label == 'Accept' and clip.keyframes:
                 painter.setPen(QPen(self.keyframe_color, 1))
                 for frame in clip.keyframes:
-                    x = int((frame / total_frames) * width)
+                    x = int((frame / self.player.total_frames) * width)
                     painter.drawLine(x, 0, x, keyframes_marker_height)
 
     def get_clip_at_frame(self, frame) -> Clip | None:
@@ -851,8 +847,8 @@ class LabelDetailsDialog(QDialog):
         
         # Get screen size and calculate initial window size
         screen = QDesktopWidget().screenGeometry()
-        width = min(int(screen.width() * 0.3), 600)
-        height = min(int(screen.height() * 0.7), 800)
+        width = min(int(screen.width() * 0.48), 600)
+        height = min(int(screen.height() * 0.64), 800)
         
         # Set size and minimum size
         self.resize(width, height)
@@ -958,7 +954,7 @@ class LabelDetailsDialog(QDialog):
         layout.addWidget(scroll)
         layout.addLayout(button_layout)
         
-    def set_label_type(self, label_type: Literal['Accept', 'Reject'], current_reasons: list[str] = None):
+    def set_label_type(self, label_type: Literal['Accept', 'Reject'], current_reasons: List[str] = None):
         """Update options based on label type and set current selections"""
         # Clear existing widgets
         for widget in self.option_widgets:
@@ -976,18 +972,25 @@ class LabelDetailsDialog(QDialog):
                     xb.setChecked(True)
                 self.option_widgets.append(xb)
                 self.checkbox_layout.addWidget(xb)
-            else:
+            elif isinstance(reason, tuple) and len(reason) == 3:
                 # Create group box with radio buttons for single-select group
                 group_name, widget_type, options = reason
                 group = QGroupBox(group_name)
+                group_is_checkable = (widget_type == 'Label')
+                if group_is_checkable:
+                    group.setCheckable(True)
+                    group.setChecked(False)
                 group_layout = QVBoxLayout()
                 group_layout.setSpacing(2)
                 group_layout.setContentsMargins(5, 5, 5, 5)
-                
+                if group_is_checkable and current_reasons and (group_name in current_reasons):
+                    # logger.debug(f"group_name: {group_name}, widget_type: {widget_type}, current_reasons: {current_reasons}")
+                    # logger.debug(f"group_name in current_reasons: {group_name in current_reasons}; type: {type(group_name)}, {type(current_reasons)}")
+                    group.setChecked(True)
                 # Create radio buttons
                 for option in options:
-                    xb = QRadioButton(option) if widget_type == 'RadioButton' else QCheckBox(option)
-                    if current_reasons and option in current_reasons:
+                    xb = eval(f"Q{widget_type}")(option)
+                    if widget_type != 'Label' and current_reasons and (option in current_reasons):
                         xb.setChecked(True)
                     group_layout.addWidget(xb)
                     self.option_widgets.append(xb)
@@ -1006,6 +1009,8 @@ class LabelDetailsDialog(QDialog):
         for widget in self.option_widgets:
             if isinstance(widget, (QCheckBox, QRadioButton)) and widget.isChecked():
                 selected.append(widget.text())
+            elif isinstance(widget, QGroupBox) and widget.isChecked():
+                selected.append(widget.title())
             elif isinstance(widget, QTextEdit) and widget.toPlainText().strip():
                 selected.append(widget.toPlainText().strip())
             # Skip QGroupBox widgets
@@ -1272,7 +1277,7 @@ class VideoPlayer(QMainWindow):
 
         # Add copy button
         self.copy_button = QPushButton()
-        self.copy_button.setIcon(self.style().standardIcon(QStyle.SP_DialogSaveButton))
+        self.copy_button.setIcon(self.style().standardIcon(QStyle.SP_TitleBarNormalButton))
         self.copy_button.setToolTip("Copy file path to clipboard")
         self.copy_button.setFixedSize(24, 24)
         self.copy_button.setStyleSheet("""
@@ -1337,7 +1342,8 @@ class VideoPlayer(QMainWindow):
         # Add prev/next video buttons and video counter
         self.navi_button = QPushButton("Navi")
         self.navi_input = QLineEdit()
-        self.navi_input.setFixedWidth(40)  # Same width as video counter
+        self.navi_input.returnPressed.connect(self.navi_button.click)
+        self.navi_input.setFixedWidth(50)  # Same width as video counter
         self.navi_input.setAlignment(Qt.AlignCenter)
         self.navi_input.setFocusPolicy(Qt.ClickFocus)  # Only focus when clicked
         self.navi_input.setStyleSheet("""
@@ -1513,7 +1519,7 @@ class VideoPlayer(QMainWindow):
             height = int(screen_height * 0.85)
             
         # Set minimum size to ensure usability
-        self.setMinimumSize(1440, 600)
+        self.setMinimumSize(1480, 600)
         
         # Set initial size
         self.resize(width, height)
@@ -1902,11 +1908,11 @@ class VideoPlayer(QMainWindow):
             
             # Initialize frame counter
             self.current_frame = 0
-            total_frames = self.video_stream.frames
-            self.frame_counter.setText(f"0/{total_frames}")
+            self.total_frames = self.video_stream.frames
+            self.frame_counter.setText(f"0/{self.total_frames}")
             
             # Update timeline
-            self.timeline_widget.set_total_frames(total_frames)
+            self.timeline_widget.set_total_frames(self.total_frames)
             self.timeline_widget.set_current_frame(0)
             
             # Get the actual size of the video container
@@ -1981,24 +1987,30 @@ class VideoPlayer(QMainWindow):
         try:
             frame = None
             # Get frames until we reach the target frame or end of stream
-            for f in self.container.decode(video=0):
-                frame = f
-                pts = frame.pts  # Presentation timestamp
-                # Convert pts to frame number using average_rate and time_base
-                # NOTE: frame's physical time (in seconds) is `frame_index / average_rate + start_time * time_base`
-                # there are two parts:
-                #   1. frame_index / average_rate   # unit: second
-                #   2. start_time * time_base       # unit: second
-                #       i.e. `pts * time_base = frame_index / average_rate + start_time * time_base`
-                #       let: `frame_per_timestamp = average_rate * time_base`
-                #        => `pts = frame_index / frame_per_timestamp + start_time`
-                #        => `frame_index = int((pts - start_time) * frame_per_timestamp)`
-                frame_no = int((pts - self.video_stream.start_time) * self.video_stream_frame_per_timestamp)
-                logger.debug(f"[Player] Decoded frame pts={pts}, frame_no={frame_no}, target={self.current_frame}")
-                
-                if frame_no >= self.current_frame:
-                    break
-            # frame = next(self.container.decode(video=0))
+            try:
+                for f in self.container.decode(video=0):
+                    frame = f
+                    pts = frame.pts  # Presentation timestamp
+                    # Convert pts to frame number using average_rate and time_base
+                    # NOTE: frame's physical time (in seconds) is `frame_index / average_rate + start_time * time_base`
+                    # there are two parts:
+                    #   1. frame_index / average_rate   # unit: second
+                    #   2. start_time * time_base       # unit: second
+                    #       i.e. `pts * time_base = frame_index / average_rate + start_time * time_base`
+                    #       let: `frame_per_timestamp = average_rate * time_base`
+                    #        => `pts = frame_index / frame_per_timestamp + start_time`
+                    #        => `frame_index = int((pts - start_time) * frame_per_timestamp)`
+                    frame_no = int((pts - self.video_stream.start_time) * self.video_stream_frame_per_timestamp)
+                    logger.debug(f"[Player] Decoded frame pts={pts}, frame_no={frame_no}, target={self.current_frame}")
+                    
+                    if frame_no >= self.current_frame:
+                        break
+                # frame = next(self.container.decode(video=0))
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                logger.error(f"[Player] Error decoding frame: {exc_type}, (file:line)={fname}{exc_tb.tb_lineno}")
+                frame = None
             
             # If no frame is available, we've reached the end
             if frame is None:
@@ -2036,7 +2048,7 @@ class VideoPlayer(QMainWindow):
                 if self.is_loop_enabled and self.current_frame >= self.loop_end_frame:
                     self.seek_to_frame(self.loop_start_frame)
                 else:
-                    self.frame_counter.setText(f"{self.current_frame}/{self.video_stream.frames}")
+                    self.frame_counter.setText(f"{self.current_frame}/{self.total_frames}")
                     self.timeline_widget.set_current_frame(self.current_frame)
                 
         except Exception as e:
@@ -2109,11 +2121,10 @@ class VideoPlayer(QMainWindow):
     def goto_end(self):
         """Go to the last frame of the video."""
         if self.container:
-            total_frames = self.video_stream.frames
-            if total_frames > 0:
+            if self.total_frames > 0:
                 self.has_ended = True
                 self.is_playing = False
-                self.seek_to_frame(total_frames - 1)
+                self.seek_to_frame(self.total_frames - 1)
                 self.play_button.setText("⟳")
                 self.timer.stop()
     
@@ -2129,10 +2140,9 @@ class VideoPlayer(QMainWindow):
             
         try:
             # Ensure frame_index is within valid range
-            total_frames = self.video_stream.frames
             if force_update:
-                frame_index = min(max(frame_index, 0), total_frames - 1)
-            elif frame_index < 0 or frame_index >= total_frames:
+                frame_index = min(max(frame_index, 0), self.total_frames - 1)
+            elif frame_index < 0 or frame_index >= self.total_frames:
                 return
                 
             # Convert frame index to timestamp using average_rate and time_base
@@ -2144,12 +2154,12 @@ class VideoPlayer(QMainWindow):
             
             # Update frame counter
             self.current_frame = frame_index
-            self.frame_counter.setText(f"{frame_index}/{total_frames}")
+            self.frame_counter.setText(f"{frame_index}/{self.total_frames}")
             self.timeline_widget.set_current_frame(frame_index)
             logger.debug(f"[Player] Current frame updated to {self.current_frame}")
             
             # Update has_ended based on frame position
-            if frame_index < total_frames - 1:
+            if frame_index < self.total_frames - 1:
                 self.has_ended = False
                 if not self.is_playing:
                     self.play_button.setText("▶")
@@ -2180,18 +2190,18 @@ class VideoPlayer(QMainWindow):
 
     def delete_selected_clips(self):
         """Delete break points of selected clips after confirmation."""
-        if self.container and not self.is_playing:
+        if self.container:
             logger.debug(f"[Player] Deleting selected clips' break points")
             self.clips_widget.delete_selected_clips_break_points()
     
     def set_clips_label(self, label):
         """Set the label for selected clips."""
-        if self.container and not self.is_playing:
+        if self.container:
             self.clips_widget.set_selected_clips_label(label)
 
     def jump_to_selected_clip_start(self):
         """Jump to the start frame of the first selected clip."""
-        if self.container and not self.is_playing:
+        if self.container:
             start_frame = self.clips_widget.get_first_selected_clip_start_frame()
             if start_frame is not None:
                 logger.debug(f"[Player] Jumping to selected clip's start frame: {start_frame}")
@@ -2201,7 +2211,7 @@ class VideoPlayer(QMainWindow):
 
     def reset_clip_keyframes(self):
         """Reset keyframes for the first selected and accepted clip."""
-        if self.container and not self.is_playing:
+        if self.container:
             self.clips_widget.reset_first_selected_clip_keyframes()
 
     def goto_prev_keyframe(self):

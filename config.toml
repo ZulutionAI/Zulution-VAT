@@ -1,6 +1,6 @@
 [application]
 name = "Video Annotation Tool"
-version = "0.2.1"
+version = "0.3.0"
 author = "Zulution.AI"
 enable_hashsum_validation = true
 enable_video_preprocessing = false
@@ -14,45 +14,55 @@ _simple = [
 _simple = [
     "转场、剪辑效果",
     "后期合成字幕",
-    "镜头画面静止",
+    "运动幅度问题",
     "内容问题",
-    "技术问题",
+    "画面问题",
     "其他",
 ]
 
-[reject_reasons.post_editing_issues]
-name = "后期合成字幕"
+[reject_reasons.post_editing_class1_issues]
+name = "转场、剪辑效果"
+type = "Label"
 options = [
-    "片头（含字幕）",
-    "片尾（含字幕）",
+    "过渡转场、剪辑效果类",
+    "拼贴、组合成的画面（例如PPT动效、多人视频会议画面）",
+    "人脸马赛克等剪辑加工",
+]
+
+[reject_reasons.post_editing_class2_issues]
+name = "后期合成字幕"
+type = "Label"
+options = [
+    "片头特效、片尾演职人员表等",
     "台词、叙述字幕",
-    "后期特效字幕",
+    "后期特效字幕、水印logo、台标、时间戳等",
 ]
 
 [reject_reasons.motion_issues]
-name = "镜头画面静止"
+name = "运动幅度问题"
+type = "Label"
 options = [
-    "画面完全静止",
+    "画面变化幅度过小",
+    "完全静止的画面时长超过1秒的部分，需要剪切剔除",
     "（动漫）完全静止帧时长超过片段总时长70%",
 ]
 
 [reject_reasons.content_issues]
 name = "内容问题"
+type = "Label"
 options = [
-    "内容无意义、难以理解",
-    "光影、色彩问题（例如过曝或欠曝使得画面太亮或太暗、以至于难以看清内容）",
-    "对焦不准、全景深失焦",
-    "过分模糊、抖动严重导致无法看清",
-    "主体不明确、动作或视角混乱",
-    "过分抽象或艺术化等",
-    "电脑录屏（录屏部分占画面主体）",
+    "内容无意义、过分抽象或艺术化",
+    "动作或视角混乱、主体不明确导致难以理解视频内容",
+    "电脑录屏（录屏部分、软件UI占画面主体）、平面素材（如漫画、照片、报表等）的展示",
 ]
 
-[reject_reasons.technical_issues]
-name = "技术问题"
+[reject_reasons.picture_issues]
+name = "画面问题"
+type = "Label"
 options = [
-    "解码问题（例如画面卡顿、冻结）",
-    "帧率问题",
-    "分辨率过低",
-    "低保真度、噪点过多（例如画质老旧，老式摄像机、监控录像拍摄）",
+    "光影、色彩问题（画面太暗或太亮以至于看不清内容）",
+    "对焦不准、全景深失焦",
+    "抖动严重、运动速度过快导致动态模糊",
+    "噪点过多、保真度低、画质老旧（例如老式摄像机、监控录像拍摄）",
+    "技术问题（解码异常导致帧率异常，画面卡顿、冻结，比例被异常拉伸或压扁）",
 ]
