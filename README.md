@@ -1,11 +1,37 @@
-# 视频标注工具
+# Zulution VAT - 视频标注工具
 
-视频播放器和标注工具，支持简单的视频片段分割、标签标注和关键帧标记。
+## 简介
+
+一个PyQt5实现的视频播放器和标注工具，支持便捷快速的视频片段分割、标签标注和关键帧标记。
+![预览](assets/preview.png)
+
+### 快速启动
+
+1. 环境安装 & App使用
+    ```bash
+    pip install -r requirements.txt
+    ```
+    
+    ```
+    python -u app.py
+    ```
+
+2. 创建一个`*json`文件用于保存所有annotations状态
+
+3. 选择一个包含`*.mp4`视频文件的目录，支持多级目录
+
+4. 预览视频并进行标注！（参考功能介绍与快捷键指南）
+
+5. 附：App打包 参考 [`INSTALL`](./INSTALL)
+
+### 配置选项 [`config.toml`](./config.toml)
+> 编辑文件，增加 / 删除 / 修改 选项文本和选项类型  
+> 支持 Label / CheckBox / GroupBox / RadioButton 等多种类型。  
 
 ## 版本信息
 
-- 版本：0.3.0
-- 发布日期：2025-03-01
+- 版本：1.0.0
+- 发布日期：2025-05-12
 
 ## 功能特点
 
@@ -89,8 +115,8 @@ A video player and annotation tool that allows for easy video clip segmentation,
 
 ## Versions
 
-- Version: 0.3.0
-- Release Date: 2025-03-01
+- Version: 1.0.0
+- Release Date: 2025-05-12
 
 ## Features
 
